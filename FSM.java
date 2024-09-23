@@ -1,10 +1,13 @@
+import java.io.IOException;
+
 public class FSM {
     private static class State {
         // Special states
         /**
          * Means that a transition is invalid.
          */
-        public static final int i =          -1;
+        public static final int INVALID =         -1;
+        public static final int i =               INVALID;
 
         // Not exit states
         public static final int START =            0;
@@ -25,7 +28,8 @@ public class FSM {
         public static final int FLO =              15;
         public static final int FLOA =             16;
 
-        // Exit states
+        // Exit states. These are also the codes that tokens hold to denote
+        // the token's type.
         public static final int OPEN_P =           17;
         public static final int CLOSE_P =          18;
         public static final int OPEN_B =           19;
@@ -60,101 +64,156 @@ public class FSM {
     // [input][current state] -> next state
     // This table contains input arrays for ascii codes 33-126
     //   (ascii printable characters excluding space and DEL)
-    private static final byte[][] TABLE =
-    new byte[][] {
-        new byte[] {State.EXCLAMATION,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i}, // ASCII !
-        new byte[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // "
-        new byte[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // #
-        new byte[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // $
-        new byte[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // %
-        new byte[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // &
-        new byte[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // '
-        new byte[] {State.OPEN_P,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i}, // (
-        new byte[] {State.CLOSE_P,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // )
-        new byte[] {State.MULT,i,i,i,i,i,i,i,i,i,   i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // *
-        new byte[] {State.PLUS,i,i,i,i,i,i,i,i,i,   i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,State.DOUBLE_PLUS,i,i,i,i,    i,i,i,i}, // +
-        new byte[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // ,
-        new byte[] {State.MINUS,i,i,i,i,i,i,i,i,i,  i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.DOUBLE_MINUS,i,i,i,i,i,i,   i,i,i,i}, // -
-        new byte[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,State.DECEMAL_POINT,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // .
-        new byte[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // /
-        new byte[] {State.INT_LITERAL,i,State.FLOAT_LITERAL,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    State.FLOAT_LITERAL,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // 0
-        new byte[] {State.INT_LITERAL,i,State.FLOAT_LITERAL,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    State.FLOAT_LITERAL,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // 1
-        new byte[] {State.INT_LITERAL,i,State.FLOAT_LITERAL,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    State.FLOAT_LITERAL,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // 2
-        new byte[] {State.INT_LITERAL,i,State.FLOAT_LITERAL,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    State.FLOAT_LITERAL,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // 3
-        new byte[] {State.INT_LITERAL,i,State.FLOAT_LITERAL,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    State.FLOAT_LITERAL,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // 4
-        new byte[] {State.INT_LITERAL,i,State.FLOAT_LITERAL,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    State.FLOAT_LITERAL,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // 5
-        new byte[] {State.INT_LITERAL,i,State.FLOAT_LITERAL,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    State.FLOAT_LITERAL,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // 6
-        new byte[] {State.INT_LITERAL,i,State.FLOAT_LITERAL,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    State.FLOAT_LITERAL,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // 7
-        new byte[] {State.INT_LITERAL,i,State.FLOAT_LITERAL,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    State.FLOAT_LITERAL,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // 8
-        new byte[] {State.INT_LITERAL,i,State.FLOAT_LITERAL,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    State.FLOAT_LITERAL,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // 9
-        new byte[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // :
-        new byte[] {State.SEMICOLON,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // ;
-        new byte[] {State.LESS,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // <
-        new byte[] {State.EQUAL,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,State.DOUBLE_EQUAL,i,i,i,i,i,i,i,i,    i,i,i,i}, // =
-        new byte[] {State.MORE,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // >
-        new byte[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // ?
-        new byte[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // @
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // A
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // B
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // C
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // D
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // E
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // F
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // G
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // H
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // I
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // J
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // K
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // L
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // M
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // N
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // O
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // P
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // Q
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // R
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // S
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // T
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // U
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // V
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // W
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // X
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // Y
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // Z
-        new byte[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // [
-        new byte[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // \
-        new byte[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // ]
-        new byte[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // ^
-        new byte[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // _
-        new byte[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // `
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // a
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // b
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // c
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // d
-        new byte[] {State.E,i,i,i,i,State.ELSE,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // e
-        new byte[] {State.F,i,i,i,i,i,State.IF,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // f
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // g
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,State.WH,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // h
-        new byte[] {State.I,i,i,i,i,i,i,i,i,State.WHI,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // i
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // j
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // k
-        new byte[] {State.IDENTIFIER,i,i,State.EL,i,i,i,i,i,i,    State.WHIL,i,State.FL,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // l
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // m
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // n
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,State.FO,i,State.FLO,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // o
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // p
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // q
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // r
-        new byte[] {State.IDENTIFIER,i,i,i,State.ELS,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // s
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,State.IN,i,i,    i,i,i,i,i,i,State.FLOA,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // t
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // u
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // v
-        new byte[] {State.W,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // w
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // x
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // y
-        new byte[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // z
-        new byte[] {State.OPEN_B,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // {
-        new byte[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // |
-        new byte[] {State.CLOSE_B,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // }
-        new byte[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // ASCII ~
+    private static final int[][] TABLE =
+    new int[][] {
+        new int[] {State.EXCLAMATION,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i}, // ASCII !
+        new int[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // "
+        new int[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // #
+        new int[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // $
+        new int[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // %
+        new int[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // &
+        new int[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // '
+        new int[] {State.OPEN_P,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i}, // (
+        new int[] {State.CLOSE_P,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // )
+        new int[] {State.MULT,i,i,i,i,i,i,i,i,i,   i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // *
+        new int[] {State.PLUS,i,i,i,i,i,i,i,i,i,   i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,State.DOUBLE_PLUS,i,i,i,i,    i,i,i,i}, // +
+        new int[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // ,
+        new int[] {State.MINUS,i,i,i,i,i,i,i,i,i,  i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.DOUBLE_MINUS,i,i,i,i,i,i,   i,i,i,i}, // -
+        new int[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,State.DECEMAL_POINT,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // .
+        new int[] {State.DIV,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // /
+        new int[] {State.INT_LITERAL,i,State.FLOAT_LITERAL,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,State.INT_LITERAL,    State.FLOAT_LITERAL,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // 0
+        new int[] {State.INT_LITERAL,i,State.FLOAT_LITERAL,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,State.INT_LITERAL,    State.FLOAT_LITERAL,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // 1
+        new int[] {State.INT_LITERAL,i,State.FLOAT_LITERAL,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,State.INT_LITERAL,    State.FLOAT_LITERAL,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // 2
+        new int[] {State.INT_LITERAL,i,State.FLOAT_LITERAL,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,State.INT_LITERAL,    State.FLOAT_LITERAL,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // 3
+        new int[] {State.INT_LITERAL,i,State.FLOAT_LITERAL,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,State.INT_LITERAL,    State.FLOAT_LITERAL,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // 4
+        new int[] {State.INT_LITERAL,i,State.FLOAT_LITERAL,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,State.INT_LITERAL,    State.FLOAT_LITERAL,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // 5
+        new int[] {State.INT_LITERAL,i,State.FLOAT_LITERAL,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,State.INT_LITERAL,    State.FLOAT_LITERAL,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // 6
+        new int[] {State.INT_LITERAL,i,State.FLOAT_LITERAL,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,State.INT_LITERAL,    State.FLOAT_LITERAL,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // 7
+        new int[] {State.INT_LITERAL,i,State.FLOAT_LITERAL,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,State.INT_LITERAL,    State.FLOAT_LITERAL,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // 8
+        new int[] {State.INT_LITERAL,i,State.FLOAT_LITERAL,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,State.INT_LITERAL,    State.FLOAT_LITERAL,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // 9
+        new int[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // :
+        new int[] {State.SEMICOLON,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // ;
+        new int[] {State.LESS,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // <
+        new int[] {State.EQUAL,State.NEQ,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,State.LEQ,i,State.GEQ,i,i,i,i,i,i,    i,State.DOUBLE_EQUAL,i,i,i,i,i,i,i,i,    i,i,i,i}, // =
+        new int[] {State.MORE,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // >
+        new int[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // ?
+        new int[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // @
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // A
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // B
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // C
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // D
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // E
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // F
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // G
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // H
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // I
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // J
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // K
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // L
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // M
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // N
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // O
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // P
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // Q
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // R
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // S
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // T
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // U
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // V
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // W
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // X
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // Y
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // Z
+        new int[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // [
+        new int[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // \
+        new int[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // ]
+        new int[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // ^
+        new int[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // _
+        new int[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // `
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,State.FLOA,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // a
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // b
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // c
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // d
+        new int[] {State.E,i,i,i,i,State.ELSE,i,i,i,i,    i,State.WHILE,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // e
+        new int[] {State.F,i,i,i,i,i,State.IF,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // f
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // g
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,State.WH,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // h
+        new int[] {State.I,i,i,i,i,i,i,i,i,State.WHI,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // i
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // j
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // k
+        new int[] {State.IDENTIFIER,i,i,State.EL,i,i,i,i,i,i,    State.WHIL,i,State.FL,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // l
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // m
+        new int[] {State.IDENTIFIER,i,i,i,i,i,State.IN,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // n
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,State.FO,i,State.FLO,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // o
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // p
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // q
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,State.FOR,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // r
+        new int[] {State.IDENTIFIER,i,i,i,State.ELS,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // s
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,State.INT,i,i,    i,i,i,i,i,i,State.FLOAT,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // t
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // u
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // v
+        new int[] {State.W,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // w
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // x
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // y
+        new int[] {State.IDENTIFIER,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,State.IDENTIFIER}, // z
+        new int[] {State.OPEN_B,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // {
+        new int[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // |
+        new int[] {State.CLOSE_B,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // }
+        new int[] {i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i,i,i,i,i,i,i,    i,i,i,i}, // ASCII ~
     };
+
+    // [state] -> true if this state is an exit state
+    private static boolean isExit(int state) {
+        return state > 16;
+    }
+
+    // Reads input until a valid token is built or the end of input is reached.
+    // Returns null only when there are no more valid tokens
+    //   in the source code stream.
+    public static Token tokenize(SourceStream code) throws IOException {
+        int currentState = State.START;
+        StringBuilder tokenValue = new StringBuilder();
+
+        if (!code.hasNext()) return null; // end of input
+        
+        while (Character.isWhitespace(code.peek())) code.next();
+
+        if (!code.hasNext()) return null; // end of input
+
+        while (code.hasNext()) {
+            char peek = code.peek();
+            if (Character.isWhitespace(peek)) {
+                code.next();
+                if (isExit(currentState))
+                    return new Token(tokenValue.toString(), currentState);
+                else {
+                    System.out.print("There are characters that are not part of a valid token: '" + tokenValue.toString() + "'");
+                    System.out.println(" at Column, Row = " + code.getColumn() + ", " + code.getRow());
+                    return tokenize(code);
+                }
+            }
+            
+            int nextState = TABLE[peek - 33][currentState];
+            if (nextState == State.INVALID) {
+                if (isExit(currentState))
+                    return new Token(tokenValue.toString(), currentState);
+                else {
+                    System.out.print("There are characters that are not part of a valid token: '" + tokenValue.toString() + "'");
+                    System.out.println(" at Column, Row = " + code.getColumn() + ", " + code.getRow());
+                    return tokenize(code);
+                }
+            }
+            else {
+                tokenValue.append(code.next());
+                currentState = nextState;
+            }
+        }
+
+        if (isExit(currentState))
+            return new Token(tokenValue.toString(), currentState);
+
+        System.out.print("There are characters that are not part of a valid token: '" + tokenValue.toString() + "'");
+        System.out.println(" at Column, Row = " + code.getColumn() + ", " + code.getRow());
+        return null; // end of input, there were characters that were not part of a valid token
+    }
 }

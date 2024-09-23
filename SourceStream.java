@@ -15,6 +15,10 @@ public class SourceStream {
     private final Reader reader;
     private boolean hasNext;
     private char next;
+    // The column of the most recently read character.
+    private int column;
+    // The row of the most recently read character.
+    private int row;
 
     public SourceStream(Reader reader) throws IOException {
         this.reader = reader;
@@ -22,6 +26,9 @@ public class SourceStream {
         int temp = reader.read();
         hasNext = temp != -1;
         next = (char)temp;
+
+        column = 0;
+        row = 0;
     }
 
     public static SourceStream fromFile(String fileName) throws FileNotFoundException, IOException {
@@ -44,6 +51,13 @@ public class SourceStream {
         int temp = reader.read();
         hasNext = temp != -1;
         next = (char)temp;
+        
+        if (next == '\n') {
+            row++;
+            column = 0;
+        }
+        else
+            column++;
 
         return toReturn;
     }
@@ -57,5 +71,13 @@ public class SourceStream {
 
     public void close() throws IOException {
         reader.close();
+    }
+
+    public int getRow() {
+        return row;
+    }
+
+    public int getColumn() {
+        return column;
     }
 }

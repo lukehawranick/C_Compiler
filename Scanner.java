@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -20,7 +21,11 @@ public class Scanner implements Iterator<Token> {
             throw new NullPointerException();
         
         this.input = input;
-        next = scan();
+        try {
+            next = FSM.tokenize(input);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
     
     @Override
@@ -34,17 +39,14 @@ public class Scanner implements Iterator<Token> {
             throw new NoSuchElementException();
 
         Token toReturn = next;
-        next = scan();
+        try {
+            next = FSM.tokenize(input);
+        }
+        catch (IOException e) {
+            next = null;
+            e.printStackTrace();
+        }
+
         return toReturn;
-    }
-    
-    /**
-     * Reads input until a valid Token is found or end of input is reached.
-     * @return The next Token read from input, or null if end of input is
-     * reached.
-     */
-    private Token scan() {
-        // TODO: This is where the FSM comes into play. Run input through the FSM until we get a valid Token or reach end of input.
-        return null;
     }
 }
