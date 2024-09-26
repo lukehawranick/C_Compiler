@@ -217,3 +217,123 @@ public class FSM {
         return null; // end of input, there were characters that were not part of a valid token
     }
 }
+
+
+
+// public class FSM {
+
+//     private static class State {
+//         // Special states
+//         public static final int INVALID = -1;
+
+//         // Not exit states
+//         public static final int START = 0;
+//         public static final int EXCLAMATION = 1;
+//         public static final int DECIMAL_POINT = 2; // Corrected name
+//         public static final int E = 3;
+//         public static final int EL = 4;
+//         public static final int ELS = 5;
+//         public static final int I = 6;
+//         public static final int IN = 7;
+//         public static final int W = 8;
+//         public static final int WH = 9;
+//         public static final int WHI = 10;
+//         public static final int WHIL = 11;
+//         public static final int F = 12;
+//         public static final int FO = 13;
+//         public static final int FL = 14;
+//         public static final int FLO = 15;
+//         public static final int FLOA = 16;
+
+//         // Exit states
+//         public static final int OPEN_P = 17;
+//         public static final int CLOSE_P = 18;
+//         public static final int OPEN_B = 19;
+//         public static final int CLOSE_B = 20;
+//         public static final int LESS = 21;
+//         public static final int LEQ = 22;
+//         public static final int MORE = 23;
+//         public static final int GEQ = 24;
+//         public static final int NEQ = 25;
+//         public static final int SEMICOLON = 26;
+//         public static final int MULT = 27;
+//         public static final int DIV = 28;
+//         public static final int INT_LITERAL = 29;
+//         public static final int FLOAT_LITERAL = 30;
+//         public static final int EQUAL = 31;
+//         public static final int DOUBLE_EQUAL = 32;
+//         public static final int MINUS = 33;
+//         public static final int DOUBLE_MINUS = 34;
+//         public static final int PLUS = 35;
+//         public static final int DOUBLE_PLUS = 36;
+//         public static final int ELSE = 37;
+//         public static final int INT = 38;
+//         public static final int IF = 39;
+//         public static final int WHILE = 40;
+//         public static final int FLOAT = 41;
+//         public static final int FOR = 42;
+//         public static final int IDENTIFIER = 43;
+//     }
+
+//     private static final int INVALID = State.INVALID;
+
+//     // Simplify and restructure the input state table
+//     private static final int[][] TABLE = new int[94][];
+    
+//     static {
+//         for (int i = 0; i < 94; i++) {
+//             TABLE[i] = new int[44];
+//             for (int j = 0; j < 44; j++) {
+//                 TABLE[i][j] = INVALID;
+//             }
+//         }
+        
+//         TABLE['!'][State.START] = State.EXCLAMATION;
+//         TABLE['('][State.START] = State.OPEN_P;
+//         TABLE[')'][State.START] = State.CLOSE_P;
+//         TABLE['*'][State.START] = State.MULT;
+//         TABLE['+'][State.START] = State.PLUS;
+//         TABLE['-'][State.START] = State.MINUS;
+//         TABLE['.'][State.START] = State.DECIMAL_POINT;
+//         TABLE['/'][State.START] = State.DIV;
+//         TABLE[';'][State.START] = State.SEMICOLON;
+//         TABLE['<'][State.START] = State.LESS;
+//         TABLE['='][State.START] = State.EQUAL;
+//         TABLE['>'][State.START] = State.MORE;
+//         TABLE['0'][State.START] = State.INT_LITERAL;
+        
+//         for (int i = '1'; i <= '9'; i++) {
+//             TABLE[i][State.START] = State.INT_LITERAL;
+//         }
+        
+//         for (int i = 'A'; i <= 'Z'; i++) {
+//             TABLE[i][State.START] = State.IDENTIFIER;
+//         }
+        
+//         for (int i = 'a'; i <= 'z'; i++) {
+//             TABLE[i][State.START] = State.IDENTIFIER;
+//         }
+//     }
+
+//     public static int getNextState(int currentState, char input) {
+//         if (input < 33 || input > 126) {
+//             return INVALID;
+//         }
+//         return TABLE[input - 33][currentState];
+//     }
+
+//     public static void main(String[] args) throws IOException {
+//         // Example usage of FSM
+//         int state = State.START;
+//         String input = "(a+b)*c";
+        
+//         for (char c : input.toCharArray()) {
+//             state = getNextState(state, c);
+//             if (state == INVALID) {
+//                 System.out.println("Invalid transition at: " + c);
+//                 return;
+//             }
+//         }
+//         System.out.println("Final state: " + state);
+//     }
+// }
