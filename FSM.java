@@ -4,6 +4,9 @@ import java.util.Arrays;
 
 public class FSM {
     public static class State {
+        // The number of states, excluding the special state INVALID.
+        public static final int STATE_COUNT = 44;
+
         // Special states
         /**
          * Means that a transition is invalid.
@@ -62,10 +65,10 @@ public class FSM {
     }
 
     // [current state][input] -> next state
-    private static final int[][] TRANSITIONS = new int[44][];
+    private static final int[][] TRANSITIONS = new int[State.STATE_COUNT][];
 
     // [state] -> Token type or -1 if not an exit state
-    private static final int[] FINAL_STATES = new int[44];
+    private static final int[] FINAL_STATES = new int[State.STATE_COUNT];
     
     static {
         // Setup final states
@@ -77,7 +80,7 @@ public class FSM {
             FINAL_STATES[i] = i;
 
         // Init all transitions to INVALID
-        for (int i = 0; i < 44; i++) {
+        for (int i = 0; i < State.STATE_COUNT; i++) {
             TRANSITIONS[i] = new int[127];
             for (int j = 0; j < 127; j++)
                 TRANSITIONS[i][j] = State.INVALID;
