@@ -2,6 +2,12 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
 
+/**
+ * @file Scanner.java
+ * @brief 
+ * @authors Jeremy Appiah, Garrett Williams
+ */
+
 public class FSM {
     public static class State {
         // The number of states, excluding the special state INVALID.
