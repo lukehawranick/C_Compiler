@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -22,7 +23,7 @@ public class Scanner implements Iterator<Token> {
         
         this.input = input;
         try {
-            next = FSM.tokenize(input);
+            next = tokenize(input);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -40,7 +41,7 @@ public class Scanner implements Iterator<Token> {
 
         Token toReturn = next;
         try {
-            next = FSM.tokenize(input);
+            next = tokenize(input);
         }
         catch (IOException e) {
             next = null;
@@ -48,5 +49,61 @@ public class Scanner implements Iterator<Token> {
         }
 
         return toReturn;
+    }
+
+    // Reads input until a valid token is built or the end of input is reached.
+    // Returns null only when there are no more valid tokens
+    //   in the source code stream.
+    public static Token tokenize(SourceStream code) throws IOException {
+        int currentState = FSM.State.START;
+        StringBuilder tokenValue = new StringBuilder();
+
+        if (!code.hasNext()) return null; // end of input
+        
+        while (Character.isWhitespace(code.peek())) code.next();
+
+        if (!code.hasNext()) return null; // end of input
+
+        while (code.hasNext()) {
+            char peek = code.peek();
+            if (Character.isWhitespace(peek)) {
+                code.next();
+                int tokenType = FSM.finalState(currentState);
+                if (tokenType != Token.Type.INVALID)
+                    return new Token(tokenValue.toString(), tokenType);
+                else {
+                    printInvalidToken(System.out, code, tokenValue);
+                    return tokenize(code);
+                }
+            }
+            
+            int nextState = FSM.nextState(currentState, peek);
+            if (nextState == FSM.State.INVALID) {
+                int tokenType = FSM.finalState(currentState);
+                if (tokenType != Token.Type.INVALID)
+                    return new Token(tokenValue.toString(), tokenType);
+                else {
+                    printInvalidToken(System.out, code, tokenValue);
+                    return tokenize(code);
+                }
+            }
+            else {
+                tokenValue.append(code.next());
+                currentState = nextState;
+            }
+        }
+
+        int tokenType = FSM.finalState(currentState);
+        if (tokenType != Token.Type.INVALID)
+            return new Token(tokenValue.toString(), tokenType);
+
+            printInvalidToken(System.out, code, tokenValue);
+        return null; // end of input, there were characters that were not part of a valid token
+    }
+
+    private static void printInvalidToken(PrintStream to, SourceStream code, StringBuilder tokenChars) {
+        to.println("There are characters that are not part of a valid token: '" +
+        tokenChars.toString() + "' at (column, row) = (" + code.getColumn() +
+        ", " + code.getRow() + ").");
     }
 }

@@ -1,5 +1,3 @@
-import java.io.IOException;
-import java.io.PrintStream;
 import java.util.Arrays;
 
 /**
@@ -181,6 +179,24 @@ public class FSM {
     }
 
     /**
+     * 
+     * @param currentState
+     * @param input
+     * @return The next state.
+     */
+    public static int nextState(int currentState, char input) {
+        return TRANSITIONS[currentState][input];
+    }
+
+    /**
+     * @param currentState
+     * @return the token's type if this is a final state, else returns -1.
+     */
+    public static int finalState(int currentState) {
+        return FINAL_STATES[currentState];
+    }
+
+    /**
      * skip - lowercase character to skip. will skip the uppercase version too.
      */
     private static void fillId(int state, char... skip) {
@@ -211,58 +227,5 @@ public class FSM {
             TRANSITIONS[state][i] = State.IDENTIFIER;
 
         TRANSITIONS[state]['_'] = State.IDENTIFIER;
-    }
-
-    // Reads input until a valid token is built or the end of input is reached.
-    // Returns null only when there are no more valid tokens
-    //   in the source code stream.
-    public static Token tokenize(SourceStream code) throws IOException {
-        int currentState = State.START;
-        StringBuilder tokenValue = new StringBuilder();
-
-        if (!code.hasNext()) return null; // end of input
-        
-        while (Character.isWhitespace(code.peek())) code.next();
-
-        if (!code.hasNext()) return null; // end of input
-
-        while (code.hasNext()) {
-            char peek = code.peek();
-            if (Character.isWhitespace(peek)) {
-                code.next();
-                if (FINAL_STATES[currentState] != State.INVALID)
-                    return new Token(tokenValue.toString(), FINAL_STATES[currentState]);
-                else {
-                    printInvalidToken(System.out, code, tokenValue);
-                    return tokenize(code);
-                }
-            }
-            
-            int nextState = TRANSITIONS[currentState][peek];
-            if (nextState == State.INVALID) {
-                if (FINAL_STATES[currentState] != State.INVALID)
-                    return new Token(tokenValue.toString(), FINAL_STATES[currentState]);
-                else {
-                    printInvalidToken(System.out, code, tokenValue);
-                    return tokenize(code);
-                }
-            }
-            else {
-                tokenValue.append(code.next());
-                currentState = nextState;
-            }
-        }
-
-        if (FINAL_STATES[currentState] != State.INVALID)
-            return new Token(tokenValue.toString(), FINAL_STATES[currentState]);
-
-            printInvalidToken(System.out, code, tokenValue);
-        return null; // end of input, there were characters that were not part of a valid token
-    }
-
-    private static void printInvalidToken(PrintStream to, SourceStream code, StringBuilder tokenChars) {
-        to.println("There are characters that are not part of a valid token: '" +
-        tokenChars.toString() + "' at (column, row) = (" + code.getColumn() +
-        ", " + code.getRow() + ").");
     }
 }
