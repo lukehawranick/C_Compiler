@@ -108,6 +108,7 @@ public class Scanner implements Iterator<Token> {
                 if (FSM.finalState(currentState) != FSM.State.INVALID){
                     return new Token(tokenValue.toString(), FSM.finalState(currentState));
                 } else {
+                    // On invalid input and non-accepting state, abandon word. Continue with next word.
                     tokenValue.append(peek);
                     printInvalidToken(System.out, code, tokenValue);
                     while (code.hasNext() && !Character.isWhitespace(code.peek())) code.next();
