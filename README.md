@@ -8,7 +8,7 @@ Welcome to the C Compiler Project. This compiler is developed in three main comp
    - [Scanner](#scanner)
    - [Parser](#parser)
    - [Code Generator](#code-generator)
-- [Installation](#installaton)
+- [Installation](#installation)
 - [Usage](#usage)
 
 ## Overview 
