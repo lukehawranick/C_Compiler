@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -11,7 +12,7 @@ import java.util.NoSuchElementException;
  * @brief A stream of source code.
  * @authors Garrett Williams
  */
-public class SourceStream {
+public class SourceStream implements Closeable {
     private final Reader reader;
     private boolean hasNext;
     private char next;
@@ -31,10 +32,23 @@ public class SourceStream {
         row = 0;
     }
 
+    /**
+     * Builds a SourceStream from the contents of a file.
+     * @param fileName
+     * @return
+     * @throws FileNotFoundException
+     * @throws IOException
+     */
     public static SourceStream fromFile(String fileName) throws FileNotFoundException, IOException {
         return new SourceStream(new BufferedReader(new FileReader(fileName)));
     }
 
+    /**
+     * Builds a SourceStream from the contents of a string.
+     * @param sourceCode
+     * @return
+     * @throws IOException
+     */
     public static SourceStream fromString(String sourceCode) throws IOException {
         return new SourceStream(new StringReader(sourceCode));
     }

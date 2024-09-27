@@ -36,6 +36,8 @@ public class Token {
     }
     
         public static class Type {
+            public static final int INVALID = -1;
+
             public static final int OPEN_P =           FSM.State.OPEN_P;
             public static final int CLOSE_P =          FSM.State.CLOSE_P;
             public static final int OPEN_B =           FSM.State.OPEN_B;

@@ -1,10 +1,8 @@
-import java.io.IOException;
-import java.io.PrintStream;
 import java.util.Arrays;
 
 /**
  * @file FSM.java
- * @brief 
+ * @brief An implementation of the FSM used by the Scanner.
  * @authors Jeremy Appiah, Garrett Williams, Luke Hawranick
  */
 
@@ -73,16 +71,16 @@ public class FSM {
     // [current state][input] -> next state
     private static final int[][] TRANSITIONS = new int[State.STATE_COUNT][];
 
-    // [state] -> Token type or -1 if not an exit state
+    // [state] -> Token type or -1 if not a final state
     private static final int[] FINAL_STATES = new int[State.STATE_COUNT];
     
     static {
         // Setup final states
         for (int i = 0; i < 3; i++)
-            FINAL_STATES[i] = -1;
+            FINAL_STATES[i] = Token.Type.INVALID;
         for (int i = 3; i < 17; i++)
-            FINAL_STATES[i] = State.IDENTIFIER;
-        for (int i = 17; i < 44; i++)
+            FINAL_STATES[i] = Token.Type.IDENTIFIER;
+        for (int i = 17; i < 44; i++) // FSM.State <-> Token.Type when > 16
             FINAL_STATES[i] = i;
 
         // Init all transitions to INVALID
@@ -112,6 +110,7 @@ public class FSM {
             TRANSITIONS[State.START][i] = State.IDENTIFIER;
         for (int i = 'a'; i <= 'z'; i++)
             TRANSITIONS[State.START][i] = State.IDENTIFIER;
+        TRANSITIONS[State.START]['_'] = State.IDENTIFIER;
         TRANSITIONS[State.START]['e'] = State.E;
         TRANSITIONS[State.START]['i'] = State.I;
         TRANSITIONS[State.START]['f'] = State.F;
@@ -160,6 +159,7 @@ public class FSM {
         fillId(State.ELS, 'e');
         fillId(State.ELSE);
         fillId(State.I, 'f', 'n');
+        fillId(State.IF);
         fillId(State.IN, 't');
         fillId(State.INT);
         fillId(State.F, 'o', 'l');
@@ -180,7 +180,29 @@ public class FSM {
     }
 
     /**
-     * skip - lowercase character to skip. will skip the uppercase version too.
+     * @param currentState
+     * @param input
+     * @return The next state.
+     */
+    public static int nextState(int currentState, char input) {
+        return TRANSITIONS[currentState][input];
+    }
+
+    /**
+     * @param currentState
+     * @return The token's type if this is a final state,
+     *         else returns Token.Type.INVALID.
+     */
+    public static int finalState(int currentState) {
+        return FINAL_STATES[currentState];
+    }
+
+    /**
+     * Fills the transitions from a state to the FSM.State.IDENTIFIER state.
+     * Points the a-z, A-Z, 0-9 and _ inputs to the IDENTIFIER state.
+     * @param state The state to fill the transitions of.
+     * @param skip Lowercase character to skip.
+     *             Will skip the uppercase version too.
      */
     private static void fillId(int state, char... skip) {
         if (skip.length == 0)
@@ -210,65 +232,5 @@ public class FSM {
             TRANSITIONS[state][i] = State.IDENTIFIER;
 
         TRANSITIONS[state]['_'] = State.IDENTIFIER;
-    }
-
-    // Reads input until a valid token is built or the end of input is reached.
-    // Returns null only when there are no more valid tokens
-    //   in the source code stream.
-    public static Token tokenize(SourceStream code) throws IOException {
-        int currentState = State.START;
-        StringBuilder tokenValue = new StringBuilder();
-
-        if (!code.hasNext()) return null; // end of input
-        
-        while (Character.isWhitespace(code.peek())) code.next();
-
-        if (!code.hasNext()) return null; // end of input
-
-        while (code.hasNext()) {
-            char peek = code.peek();
-
-            if (Character.isWhitespace(peek)) {
-                code.next();
-                if (FINAL_STATES[currentState] != State.INVALID){
-                    return new Token(tokenValue.toString(), FINAL_STATES[currentState]);
-                } else {
-                    tokenValue.append(peek);
-                    printInvalidToken(System.out, code, tokenValue);
-                    return tokenize(code);
-                }
-            }
-            
-            int nextState = TRANSITIONS[currentState][peek];
-
-            // there is not a transition given by the next character
-            if (nextState == State.INVALID) {
-                // if the current state is a final state, return the token
-                if (FINAL_STATES[currentState] != State.INVALID){
-                    return new Token(tokenValue.toString(), FINAL_STATES[currentState]);
-                } else {
-                    tokenValue.append(peek);
-                    printInvalidToken(System.out, code, tokenValue);
-                    while (code.hasNext() && !Character.isWhitespace(code.peek())) code.next();
-                    return tokenize(code);
-                }
-            }
-            else {
-                tokenValue.append(code.next());
-                currentState = nextState;
-            }
-        }
-
-        if (FINAL_STATES[currentState] != State.INVALID)
-            return new Token(tokenValue.toString(), FINAL_STATES[currentState]);
-
-            printInvalidToken(System.out, code, tokenValue);
-        return null; // end of input, there were characters that were not part of a valid token
-    }
-
-    private static void printInvalidToken(PrintStream to, SourceStream code, StringBuilder tokenChars) {
-        to.println("There are characters that are not part of a valid token: '" +
-        tokenChars.toString() + "' at (column, row) = (" + code.getColumn() +
-        ", " + code.getRow() + ").");
     }
 }
