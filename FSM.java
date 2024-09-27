@@ -1,10 +1,11 @@
-import java.util.Arrays;
-
 /**
  * @file FSM.java
  * @brief An implementation of the FSM used by the Scanner.
  * @authors Jeremy Appiah, Garrett Williams, Luke Hawranick
+ * @date 09/27/24
  */
+
+import java.util.Arrays;
 
 public class FSM {
     public static class State {
@@ -180,8 +181,9 @@ public class FSM {
     }
 
     /**
-     * @param currentState
-     * @param input
+     * @brief Determines the next state given the current state and input.
+     * @param currentState The current state.
+     * @param input The input character.
      * @return The next state.
      */
     public static int nextState(int currentState, char input) {
@@ -189,16 +191,16 @@ public class FSM {
     }
 
     /**
-     * @param currentState
-     * @return The token's type if this is a final state,
-     *         else returns Token.Type.INVALID.
+     * @brief Determines if a state is a final state.
+     * @param currentState The state to check.
+     * @return The token's type if this is a final state, returns Token.Type.INVALID otherwise.
      */
     public static int finalState(int currentState) {
         return FINAL_STATES[currentState];
     }
 
     /**
-     * Fills the transitions from a state to the FSM.State.IDENTIFIER state.
+     * @brief Fills the transitions from a state to the FSM.State.IDENTIFIER state.
      * Points the a-z, A-Z, 0-9 and _ inputs to the IDENTIFIER state.
      * @param state The state to fill the transitions of.
      * @param skip Lowercase character to skip.
@@ -210,6 +212,7 @@ public class FSM {
 
         Arrays.sort(skip);
 
+        // fill transitions from current state of all lowercase characters to IDENTIFIER state except those specified by skip
         char pos = 'a';
         for (int s = 0; s < skip.length; s++) {
             for (int i = pos; i < skip[s]; i++)
@@ -218,6 +221,8 @@ public class FSM {
         }
         for (int i = skip[skip.length-1] + 1; i <= 'z'; i++)
             TRANSITIONS[state][i] = State.IDENTIFIER;
+
+        // fill transitions from current state of all uppercase characters to IDENTIFIER state except those specified by skip
         pos = 'A';
         for (int s = 0; s < skip.length; s++) {
             int stopAt = skip[s] - ('a' - 'A');
@@ -228,9 +233,11 @@ public class FSM {
         for (int i = skip[skip.length-1] - ('a' - 'A') + 1; i <= 'Z'; i++)
             TRANSITIONS[state][i] = State.IDENTIFIER;
 
+        // fill transitions from current state of all digits and _ to IDENTIFIER state
         for (int i = '0'; i < '9'; i++)
             TRANSITIONS[state][i] = State.IDENTIFIER;
 
+        // fill transitions from current state of _ to IDENTIFIER state
         TRANSITIONS[state]['_'] = State.IDENTIFIER;
     }
 }

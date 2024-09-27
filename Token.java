@@ -1,16 +1,19 @@
 /**
  * @file Token.java
- * @brief
- * This class represents a token that the Scanner has generated from source
+ * @brief This class represents a token that the Scanner has generated from source
  * code. The source code that resulted in this token is stored into the value
  * field so that further information can be extracted from it such as a number's
  * numerical value or an identifier's name.
  * @authors Garrett Williams
  */
 public class Token {
+    // The value of the token.
     public final String value;
+    // The class of the token.
     public final int type;
 
+    // The names of the token classes
+    // null values are due to the build of the FSM in FSM.java
     private static final String[] typeNames = new String[] {
         null, null, null, null, null, null, null, null, null, null,
         null, null, null, null, null, null, null,
@@ -21,20 +24,37 @@ public class Token {
         "IDENTIFIER"
     };
 
+    /**
+     * Constructs a Token with a value and a type.
+     * @param value The value of the token.
+     * @param type The type of the token.
+     */
     public Token(String value, int type) {
         this.value = value;
         this.type = type;
     }
     
+    /**
+     * Returns a string representation of the token.
+     * @returns A string representation of the token.
+     */
     @Override
     public String toString() {
         return String.format("%s <%s>", tokenTypeToString(type), value);
     }
     
+    /**
+     * Converts a token type ID to a string.
+     * @param type The token type to convert as an integer.
+     * @returns The string representation of the token type.
+     */
     public static String tokenTypeToString(int type) {
         return typeNames[type];
     }
     
+        /**
+         * The token types.
+         */
         public static class Type {
             public static final int INVALID = -1;
 
