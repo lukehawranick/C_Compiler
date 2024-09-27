@@ -5,7 +5,7 @@ import java.util.NoSuchElementException;
 
 /**
  * @file Scanner.java
- * @brief 
+ * @brief A Scanner that tokenizes source code input.
  * @authors Garrett Williams
  */
 public class Scanner implements Iterator<Token> {
@@ -17,6 +17,12 @@ public class Scanner implements Iterator<Token> {
      */
     private Token next;
 
+    /**
+     * Constructs a Scanner instance and prepares the first token to be
+     * collected.
+     * @param input
+     * @throws NullPointerException
+     */
     public Scanner(SourceStream input) throws NullPointerException {
         if (input == null)
             throw new NullPointerException();
@@ -54,7 +60,7 @@ public class Scanner implements Iterator<Token> {
     // Reads input until a valid token is built or the end of input is reached.
     // Returns null only when there are no more valid tokens
     //   in the source code stream.
-    public static Token tokenize(SourceStream code) throws IOException {
+    private static Token tokenize(SourceStream code) throws IOException {
         int currentState = FSM.State.START;
         StringBuilder tokenValue = new StringBuilder();
 
@@ -83,7 +89,9 @@ public class Scanner implements Iterator<Token> {
                 if (tokenType != Token.Type.INVALID)
                     return new Token(tokenValue.toString(), tokenType);
                 else {
+                    tokenValue.append(peek);
                     printInvalidToken(System.out, code, tokenValue);
+                    code.next();
                     return tokenize(code);
                 }
             }
@@ -97,7 +105,7 @@ public class Scanner implements Iterator<Token> {
         if (tokenType != Token.Type.INVALID)
             return new Token(tokenValue.toString(), tokenType);
 
-            printInvalidToken(System.out, code, tokenValue);
+        printInvalidToken(System.out, code, tokenValue);
         return null; // end of input, there were characters that were not part of a valid token
     }
 

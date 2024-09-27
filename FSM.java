@@ -2,7 +2,7 @@ import java.util.Arrays;
 
 /**
  * @file Scanner.java
- * @brief 
+ * @brief Contains an implementation of the FSM used by the Scanner.
  * @authors Jeremy Appiah, Garrett Williams
  */
 
@@ -71,16 +71,16 @@ public class FSM {
     // [current state][input] -> next state
     private static final int[][] TRANSITIONS = new int[State.STATE_COUNT][];
 
-    // [state] -> Token type or -1 if not an exit state
+    // [state] -> Token type or -1 if not a final state
     private static final int[] FINAL_STATES = new int[State.STATE_COUNT];
     
     static {
         // Setup final states
         for (int i = 0; i < 3; i++)
-            FINAL_STATES[i] = -1;
+            FINAL_STATES[i] = Token.Type.INVALID;
         for (int i = 3; i < 17; i++)
-            FINAL_STATES[i] = State.IDENTIFIER;
-        for (int i = 17; i < 44; i++)
+            FINAL_STATES[i] = Token.Type.IDENTIFIER;
+        for (int i = 17; i < 44; i++) // FSM.State <-> Token.Type when > 16
             FINAL_STATES[i] = i;
 
         // Init all transitions to INVALID
@@ -110,6 +110,7 @@ public class FSM {
             TRANSITIONS[State.START][i] = State.IDENTIFIER;
         for (int i = 'a'; i <= 'z'; i++)
             TRANSITIONS[State.START][i] = State.IDENTIFIER;
+        TRANSITIONS[State.START]['_'] = State.IDENTIFIER;
         TRANSITIONS[State.START]['e'] = State.E;
         TRANSITIONS[State.START]['i'] = State.I;
         TRANSITIONS[State.START]['f'] = State.F;
@@ -179,7 +180,6 @@ public class FSM {
     }
 
     /**
-     * 
      * @param currentState
      * @param input
      * @return The next state.
@@ -190,14 +190,19 @@ public class FSM {
 
     /**
      * @param currentState
-     * @return the token's type if this is a final state, else returns -1.
+     * @return The token's type if this is a final state,
+     *         else returns Token.Type.INVALID.
      */
     public static int finalState(int currentState) {
         return FINAL_STATES[currentState];
     }
 
     /**
-     * skip - lowercase character to skip. will skip the uppercase version too.
+     * Fills the transitions from a state to the FSM.State.IDENTIFIER state.
+     * Points the a-z, A-Z, 0-9 and _ inputs to the IDENTIFIER state.
+     * @param state The state to fill the transitions of.
+     * @param skip Lowercase character to skip.
+     *             Will skip the uppercase version too.
      */
     private static void fillId(int state, char... skip) {
         if (skip.length == 0)
