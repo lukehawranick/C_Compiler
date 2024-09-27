@@ -10,10 +10,11 @@ public class Compiler {
         System.out.println("Starting...");
 
         try {
-            Scanner s = new Scanner(SourceStream.fromString("for(int j = 0; j < 100; j++) x = 5 * j;"));
+            Scanner s = new Scanner(SourceStream.fromFile("sourcecode.myc"));
             while (s.hasNext()) System.out.println(s.next());
         } catch (NullPointerException | IOException e) {
             e.printStackTrace();
+            System.out.println("Please create a sourcecode.myc file.");
         }
         
         System.out.println("Finished!");
