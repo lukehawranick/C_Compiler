@@ -3,9 +3,9 @@ import java.io.PrintStream;
 import java.util.Arrays;
 
 /**
- * @file Scanner.java
+ * @file FSM.java
  * @brief 
- * @authors Jeremy Appiah, Garrett Williams
+ * @authors Jeremy Appiah, Garrett Williams, Luke Hawranick
  */
 
 public class FSM {
@@ -152,7 +152,7 @@ public class FSM {
         TRANSITIONS[State.W]['h'] = State.WH;
         TRANSITIONS[State.WH]['i'] = State.WHI;
         TRANSITIONS[State.WHI]['l'] = State.WHIL;
-        TRANSITIONS[State.WHILE]['e'] = State.WHILE;
+        TRANSITIONS[State.WHIL]['e'] = State.WHILE;
 
         // From keyword to identifier
         fillId(State.E, 'l');
@@ -227,22 +227,29 @@ public class FSM {
 
         while (code.hasNext()) {
             char peek = code.peek();
+
             if (Character.isWhitespace(peek)) {
                 code.next();
-                if (FINAL_STATES[currentState] != State.INVALID)
+                if (FINAL_STATES[currentState] != State.INVALID){
                     return new Token(tokenValue.toString(), FINAL_STATES[currentState]);
-                else {
+                } else {
+                    tokenValue.append(peek);
                     printInvalidToken(System.out, code, tokenValue);
                     return tokenize(code);
                 }
             }
             
             int nextState = TRANSITIONS[currentState][peek];
+
+            // there is not a transition given by the next character
             if (nextState == State.INVALID) {
-                if (FINAL_STATES[currentState] != State.INVALID)
+                // if the current state is a final state, return the token
+                if (FINAL_STATES[currentState] != State.INVALID){
                     return new Token(tokenValue.toString(), FINAL_STATES[currentState]);
-                else {
+                } else {
+                    tokenValue.append(peek);
                     printInvalidToken(System.out, code, tokenValue);
+                    while (code.hasNext() && !Character.isWhitespace(code.peek())) code.next();
                     return tokenize(code);
                 }
             }

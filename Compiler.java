@@ -10,7 +10,7 @@ public class Compiler {
         System.out.println("Starting...");
 
         try {
-            Scanner s = new Scanner(SourceStream.fromString("for(int j = 0; j < 100; j++) x = 5 * j;"));
+            Scanner s = new Scanner(SourceStream.fromString("char[] a = \"Hello, World!\";"));
             while (s.hasNext()) System.out.println(s.next());
         } catch (NullPointerException | IOException e) {
             e.printStackTrace();
