@@ -1,10 +1,10 @@
-import java.io.IOException;
-
 /**
  * @file Compiler.java
  * @brief Main class for the compiler, utilizing all completed components.
- * @authors
  */
+
+import java.io.IOException;
+
 public class Compiler {
     public static void main(String[] args) {
         System.out.println("Starting...");
