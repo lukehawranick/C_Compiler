@@ -13,27 +13,24 @@ Welcome to the C Compiler Project. This compiler is developed in three main comp
 
 ## Overview 
 
-This project aims to create a C compiler written in Java, structured into three distinct components. **Scanner** is fully implemented and operational, while **Parser**, and **Code Generator** are under development.
+This project aims to create a C compiler written in Java, structured into three distinct components. **Scanner** is fully implemented and operational, while **Parser**, and **Code Generator** are under development. The project is expected to be completed by 12/12/24.
 
 ## Components
 
 ### Scanner
 
 - **Status**: Completed
-- **Description**:
-- **Usage**: 
+- **Description**: The scanner defines a state-transition table in the form of a two-dimensional array, receives input in the form of minimal dialect syntax from a file, and outputs the corresponding tokens of the file.
 
 ### Parser
 
-- **Status**: In Progress
-- **Description**:
-- **Usage**: 
+- **Status**: In Progress.
+- **Expected Release**: 10/25/24
 
 ### Code Generator
 
-- **Status**: In Progress
-- **Description**:
-- **Usage**: 
+- **Status**: In Progress.
+- **Expected Release**: 11/15/24
 
 ## Installation
 
