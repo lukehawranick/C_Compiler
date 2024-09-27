@@ -160,6 +160,7 @@ public class FSM {
         fillId(State.ELS, 'e');
         fillId(State.ELSE);
         fillId(State.I, 'f', 'n');
+        fillId(State.IF);
         fillId(State.IN, 't');
         fillId(State.INT);
         fillId(State.F, 'o', 'l');
