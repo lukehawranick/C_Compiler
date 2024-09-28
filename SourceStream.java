@@ -2,6 +2,7 @@
  * @file SourceStream.java
  * @brief A SourceStream that reads source code input.
  * @authors Garrett Williams
+ * @reviewers Koren Spell, Mallory Anderson
  */
 
 import java.io.BufferedReader;
