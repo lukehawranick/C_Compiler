@@ -2,6 +2,7 @@
  * @file Scanner.java
  * @brief A Scanner that tokenizes source code input.
  * @authors Garrett Williams, Luke Hawranick
+ * @reviewers Koren Spell, Mallory Anderson
  * @date 09/27/2024
  */
 
