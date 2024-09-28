@@ -2,6 +2,7 @@
  * @file FSM.java
  * @brief An implementation of the FSM used by the Scanner.
  * @authors Jeremy Appiah, Garrett Williams, Luke Hawranick
+ * @reviewers Koren Spell, Mallory Anderson
  * @date 09/27/24
  */
 
