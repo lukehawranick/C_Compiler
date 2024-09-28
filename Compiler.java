@@ -1,6 +1,8 @@
 /**
  * @file Compiler.java
  * @brief Main class for the compiler, utilizing all completed components.
+ * @authors Luke Hawranick, Garrett Williams
+ * @reviewers Koren Spell, Mallory Anderson
  */
 
 import java.io.IOException;
