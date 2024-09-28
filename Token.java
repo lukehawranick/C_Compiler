@@ -1,10 +1,12 @@
 /**
  * @file Token.java
  * @brief This class represents a token that the Scanner has generated from source
- * code. The source code that resulted in this token is stored into the value
- * field so that further information can be extracted from it such as a number's
+ * code. The source code that resulted in this token is stored in the value
+ * field so that further information can be extracted from it, such as a number's
  * numerical value or an identifier's name.
  * @authors Garrett Williams
+ * @reviewers Koren Spell, Mallory Anderson
+ * @date 09/27/24
  */
 public class Token {
     // The value of the token.
