@@ -9,33 +9,30 @@
  import java.util.List;
 
 public class Parser {
-    private List<String> input;
-    private int position;
+    private Scanner input;
 
-    public Parser(List<String> input) {
+    public Parser(Scanner input) {
         this.input = input;
-        this.position = 0;
     }
 
-    private boolean accept(String terminal) {
-        if (position < input.size() && input.get(position).equals(terminal)) {
-            position++;
+    private boolean accept(Token.Type terminal) {
+        if (input.hasNext() && input.peek().type.equals(terminal)) {
+            input.next()
             return true;
         }
         return false;
     }
 
     @SuppressWarnings("unused")
-    private void expect(String terminal) {
+    private void expect(Token.Type terminal) {
         if (!accept(terminal)) {
             throw new RuntimeException("Syntax error: expected " + terminal);
         }
     }
 
     public void parse() {
-        position = 0;
         stmt();
-        if (position == input.size()) {
+        if (input.hasNext()) {
             System.out.println("Parsing successful");
         } else {
             throw new RuntimeException("Syntax error: unexpected tokens at end of input");
@@ -47,6 +44,3 @@ public class Parser {
         throw new UnsupportedOperationException("Unimplemented method 'stmt'");
     }
 }
-
-//subject to change; this is only how I interpreted the pseudo; added supress warning to 
-//identify my throught process

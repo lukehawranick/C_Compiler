@@ -69,6 +69,12 @@ public class Scanner implements Iterator<Token> {
         return toReturn;
     }
 
+    public Token peek() throws NoSuchElementException {
+        if (next == null)
+            throw new NoSuchElementException();
+        return next;
+    }
+
     /**
      * @brief Reads input until a valid token is built or the end of input is reached.
      * @returns The token, or null when there are no more valid tokens in the source code stream.
