@@ -43,13 +43,51 @@ public class Atom {
     }
 
     public enum Opcode {
-        MUL;
+        /**
+         * (ADD, left, right, result)
+         */
+        ADD,
+        /**
+         * (SUB, left, right, result)
+         */
+        SUB,
+        /**
+         * (MUL, left, right, result)
+         */
+        MUL,
+        /**
+         * (DIV, left, right, result)
+         */
+        DIV,
+        /**
+         * (JMP, , , , , dest)
+         */
+        JMP,
+        /**
+         * (NEG, left, , result)
+         */
+        NEG,
+        /**
+         * (LBL, , , , , dest)
+         */
+        LBL,
+        /**
+         * (TST, left, right, , cmp, dest)
+         */
+        TST,
+        /**
+         * (MOV, s, , d)
+         */
+        MOV;
 
         public static Opcode tokenToOpcode(Token token) {
-            if (token.type == Token.Type.MULT)
-                return MUL;
-
-            throw new RuntimeException("Token's type does not correlate with an opcode.");
+            switch (token.type) {
+                case Token.Type.PLUS: return ADD;
+                case Token.Type.MINUS: return SUB;
+                case Token.Type.MULT: return MUL;
+                case Token.Type.DIV: return DIV;
+                default: throw new RuntimeException("Token's type does not correlate with an opcode.");
+            }
         }
     }
 }
