@@ -7,30 +7,21 @@ package mainpackage;
  * @date 10/23/2024
  */
 
- import java.util.List;
+import static mainpackage.Token.Type;
 
 public class Parser {
     private Scanner input;
+    /**
+     * The most recently consumed token.
+     */
+    private Token token;
+    private int nextTempVarNum;
 
     public Parser(Scanner input) {
         this.input = input;
+        nextTempVarNum = 0;
     }
-
-    private boolean accept(Token.Type terminal) {
-        if (input.hasNext() && input.peek().type.equals(terminal)) {
-            input.next()
-            return true;
-        }
-        return false;
-    }
-
-    @SuppressWarnings("unused")
-    private void expect(Token.Type terminal) {
-        if (!accept(terminal)) {
-            throw new RuntimeException("Syntax error: expected " + terminal);
-        }
-    }
-
+    
     public void parse() {
         stmt();
         if (input.hasNext()) {
@@ -40,9 +31,43 @@ public class Parser {
         }
     }
 
+    // TODO: Implement a way to provide output (implement iterator)
+    public void output(Atom atom) {
+        System.out.println(atom);
+    }
+
+    private String tempVar() {
+        return "t" + nextTempVarNum++;
+    }
+
+    /**
+     * Checks to see if the next token matches the terminal and if so, sets the 'token' field to the next token.
+     * @param terminal The Token.Type to accept.
+     * @return True if the next token was of type 'terminal', else false.
+     */
+    private boolean accept(int terminal) {
+        if (input.hasNext() && input.peek().type == terminal) {
+            token = input.next();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Checks to see if the next token matches the terminal and if so, sets the 'token' field to the next token, else throws.
+     * @param terminal The Token.Type to expect.
+     * @return The token that was consumed.
+     */
+    private Token expect(int terminal) {
+        if (!accept(terminal))
+            throw new RuntimeException("Syntax error: expected " + terminal);
+        return token;
+    }
+
     private void stmt() {
         if (accept(Type.INT) || accept(Type.FLOAT)) {
-            expect(Type.IDENTIFIER);
+            Token type = token;
+            Token variable = expect(Type.IDENTIFIER);
             expect(Type.EQUAL);
             expr();
             expect(Type.SEMICOLON);
@@ -55,7 +80,7 @@ public class Parser {
             stmt();
         } else if (accept(Type.OPEN_P)) {
             expr();
-            expect(Type.Close_P);
+            expect(Type.CLOSE_P);
             factors();
             terms();
             compares();
@@ -94,7 +119,7 @@ public class Parser {
         expect(Type.CLOSE_B);
     }
 
-    private void else() {
+    private void _else() {
         expect(Type.ELSE);
         block();
         if (accept(Type.INT) || accept(Type.FLOAT) || accept(Type.IDENTIFIER) || accept(Type.INT_LITERAL)
@@ -108,8 +133,8 @@ public class Parser {
     }
 
     private void pre() {
-        if (!accept(Type.INT_KEYW)) {
-            accept(Type.FLOAT_KEYW);
+        if (!accept(Type.INT)) {
+            accept(Type.FLOAT);
         }
         expect(Type.IDENTIFIER);
         expect(Type.EQUAL);
@@ -131,8 +156,12 @@ public class Parser {
         }
      }
 
-     private void expr(){
+     /**
+      * Returns the value that contains the result of this expression.
+      */
+     private String expr(){
         if(accept(Type.IDENTIFIER)){
+            Token lhs = token;
             factors();
             terms();
             compares();
@@ -163,15 +192,61 @@ public class Parser {
         }
     }
 
-    //Luke: EQUALS(){} goes here
+    private void equals() {
+        if (accept(Type.DOUBLE_EQUAL)) {
+            equal();
+            equals();
+        } else if (accept(Type.NEQ)) {
+            equal();
+            equals();
+        } else {
+            throw new RuntimeException();
+        }
+    }
 
-    //Luke:EQUAL(){} goes here
+    private void equal() {
+        if (accept(Type.IDENTIFIER)) {
+            factors();
+            terms();
+            compares();
+        } else if (accept(Type.INT_LITERAL)) {
+            factors();
+            terms();
+            compares();
+        } else if (accept(Type.FLOAT_LITERAL)) {
+            factors();
+            terms();
+            compares();
+        } else if (accept(Type.OPEN_P)) {
+            expr();
+            expect(Type.CLOSE_P);
+            factors();
+            terms();
+            compares();
+        }
+    }
 
-    //LUKE: COMPARES(){} goes here
+    private void compares() {
+        if (accept(Type.LESS)) {
+            compare();
+            compares();
+        } else if (accept(Type.MORE)) {
+            compare();
+            compares();
+        } else if (accept(Type.LEQ)) {
+            compare();
+            compares();
+        } else if (accept(Type.GEQ)) {
+            compare();
+            compares();
+        } else {
+            throw new RuntimeException();
+        }
+    }
 
     private void compare() {
-        if accept(Type.IDENTIFIER) || accept(Type.INT_LITERAL)
-            || accept(Type.FLOAT_LITERAL) {
+        if (accept(Type.IDENTIFIER) || accept(Type.INT_LITERAL)
+            || accept(Type.FLOAT_LITERAL)) {
             factors();
             terms();
         } else if (accept(Type.OPEN_P)) {
@@ -181,14 +256,15 @@ public class Parser {
             terms();
         }
     }
+
     private void terms() {
         if (accept(Type.PLUS) || accept(Type.MINUS)) {
             term();
             terms();
         }
-     }
-     
-     private void term() {
+    }
+    
+    private void term() {
         if (accept(Type.IDENTIFIER) || accept(Type.INT_LITERAL) || accept(Type.FLOAT_LITERAL) || accept(Type.OPEN_P)) {
             if (accept(Type.OPEN_P)) {
                 expr();
@@ -197,46 +273,50 @@ public class Parser {
             factors();
         }
      }
-     private void factors(){
-        if (accept(Type.MULT)){
-            factor();
-            factors();
-        }
-        else if (accept(Type.DIV)) {
-            factor();
-            factors();
+
+    private Arith factors() {
+        if (accept(Type.MULT) || accept(Type.DIV)) {
+            Atom.Opcode opcode = Atom.Opcode.tokenToOpcode(token);
+            String value = factor();
+            Arith arith = factors();
+            if (arith != null) {
+                String newVal = tempVar();
+                output(new Atom(arith.operator, value, arith.rhs, newVal));
+                value = newVal;
+            }
+
+            return new Arith(opcode, value);
         }
         else{
             throw new RuntimeException("Syntax error: expected a factor");
         }
     }
-    private void Factor() {
+
+    private String factor() {
         if (accept(Type.OPEN_P)) {
-            expr();
+            String toReturn = expr();
             expect(Type.CLOSE_P);
+            return toReturn;
         } else if (accept(Type.MINUS)) {
-            value();
+            return value();
         } else if (!accept(Type.IDENTIFIER) && !accept(Type.INT_LITERAL)
             && !accept(Type.FLOAT_LITERAL)) {
             throw new RuntimeException();
         }
+        return token.value;
     }
 
-    private void value() {
+    private String value() {
         if (accept(Type.INT_LITERAL)) {
-            // Pass
-        }
-
-
-        else if(accept(Type.FLOAT_LITERAL)) {
-            // Pass
-        }
-
-
-        else if(accept(Type.OPEN_P)) {
-            expr();
+            return token.value;
+        } else if(accept(Type.FLOAT_LITERAL)) {
+            return token.value;
+        } else if(accept(Type.OPEN_P)) {
+            String toReturn = expr();
             expect(Type.CLOSE_P);
+            return toReturn;
         }
-    }
-                            
+
+        throw new RuntimeException();
+    }        
 }
