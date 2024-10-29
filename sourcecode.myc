@@ -1,10 +1,12 @@
 int _x1 = 0;
 float yabc = 15.5;
-for (int i = 0; i < 100; i++) {
-    if (i / 10 > 5)
-        _x1++;
-    else
-        _x1--;
+for (int i = 0; i < 100; i = i + 1) {
+    if (i / 10 > 5) {
+        _x1 = _x1 + 1;
+    }
+    else {
+        _x1 = _x1 - 1;
+    }
 
     if (i > yabc) {
         yabc = yabc * 1.5;

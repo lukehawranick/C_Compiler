@@ -15,7 +15,8 @@ public class Compiler {
 
         try {
             Scanner s = new Scanner(SourceStream.fromFile("sourcecode.myc"));
-            while (s.hasNext()) System.out.println(s.next());
+            Parser p = new Parser(s);
+            p.parse();
         } catch (NullPointerException | IOException e) {
             e.printStackTrace();
             System.out.println("Please create a sourcecode.myc file.");

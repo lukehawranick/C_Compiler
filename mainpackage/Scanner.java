@@ -137,6 +137,10 @@ public class Scanner implements Iterator<Token> {
         return null; // end of input, there were characters that were not part of a valid token
     }
 
+    public String getPos() {
+        return String.format("(%d, %d)", input.getColumn(), input.getRow());
+    }
+
     /**
      * @brief Prints an error message to the given PrintStream when an invalid token is found.
      * @param to The PrintStream to print the error message to.

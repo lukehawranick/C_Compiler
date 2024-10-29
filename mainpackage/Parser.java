@@ -7,8 +7,6 @@ package mainpackage;
  * @date 10/23/2024
  */
 
-import static mainpackage.Token.Type;
-
 import mainpackage.Token.Type;
 
 public class Parser {
@@ -26,10 +24,10 @@ public class Parser {
     
     public void parse() {
         stmt();
-        if (input.hasNext()) {
+        if (!input.hasNext()) {
             System.out.println("Parsing successful");
         } else {
-            throw new RuntimeException("Syntax error: unexpected tokens at end of input");
+            throw new RuntimeException("Syntax error: unexpected tokens at end of input: " + input.peek());
         }
     }
 
@@ -62,8 +60,17 @@ public class Parser {
      */
     private Token expect(int terminal) {
         if (!accept(terminal))
-            throw new RuntimeException("Syntax error: expected " + terminal);
+            throw err("Expected not present. Expected = " + Token.tokenTypeToString(terminal));
         return token;
+    }
+
+    /**
+     * For follow sets. Does what accept does but minus the consuming of the token and does not set 'token' field.
+     * @param terminal
+     * @return
+     */
+    private boolean peek(int terminal) {
+        return input.hasNext() && input.peek().type == terminal;
     }
 
     private void stmt() {
@@ -79,6 +86,8 @@ public class Parser {
             terms();
             compares();
             equals();
+            assigns();
+            expect(Type.SEMICOLON);
             stmt();
         } else if (accept(Type.OPEN_P)) {
             expr();
@@ -87,6 +96,7 @@ public class Parser {
             terms();
             compares();
             equals();
+            assigns();
             expect(Type.SEMICOLON);
             stmt();
         } else if (accept(Type.IF)) {
@@ -112,9 +122,13 @@ public class Parser {
             block();
             stmt();
         } else {
-            throw new RuntimeException();
+            if (!input.hasNext() || peek(Token.Type.CLOSE_B))
+                return; // follow set: {CLOSE_B, END OF INPUT}
+            else
+                throw err("STMT ERROR");
         }
     }
+
     private void block() {
         expect(Type.OPEN_B);
         stmt();
@@ -122,15 +136,15 @@ public class Parser {
     }
 
     private void _else() {
-        expect(Type.ELSE);
-        block();
-        if (accept(Type.INT) || accept(Type.FLOAT) || accept(Type.IDENTIFIER) || accept(Type.INT_LITERAL)
-           || accept(Type.FLOAT_LITERAL) || accept(Type.OPEN_P) || accept(Type.IF) || accept(Type.FOR)
-           || accept (Type.WHILE)) {
+        if (accept(Type.ELSE))
+            block();
+        else if (peek(Type.INT) || peek(Type.FLOAT) || peek(Type.IDENTIFIER) || peek(Type.INT_LITERAL)
+           || peek(Type.FLOAT_LITERAL) || peek(Type.OPEN_P) || peek(Type.IF) || peek(Type.FOR)
+           || peek (Type.WHILE) || peek(Type.CLOSE_B)) {
             // Pass
         }
         else {
-            throw new RuntimeException("Syntax Error: Invalid token.");
+            throw err("Follow set conditions not met.");
         }
     }
 
@@ -192,14 +206,22 @@ public class Parser {
                 output(new Atom(arith.operator, value, arith.rhs, newVal));
                 value = newVal;
             }
+
+            arith = assigns();
+            if (arith != null) {
+                // TODO: Ensure 'value' is an identifier somehow? Where should this be done? In grammar somehow? Here somehow?
+                output(new Atom(Atom.Opcode.MOV, arith.rhs, null, value));
+            }
+
+            return value;
         }
-        else if (accept(Type.INT)) {
+        else if (accept(Type.INT_LITERAL)) {
             factors();
             terms();
             compares();
             equals();
         }
-        else if (accept(Type.FLOAT)) {
+        else if (accept(Type.FLOAT_LITERAL)) {
             factors();
             terms();
             compares();
@@ -214,15 +236,100 @@ public class Parser {
             equals();
         }
         else{
-            throw new RuntimeException("Syntax error: expected expression");
+            throw new RuntimeException(String.format("Syntax error: expected expression. POS=%s. RECENTLY CONSUMED TOKEN=%s. NEXT TOKEN=%s", input.getPos(), token.toString(), input.peek().toString()));
+        }
+
+        return "EXPRSTR";
+    }
+
+    private Arith assigns() {
+        if (accept(Type.EQUAL)) {
+            assign();
+            assigns();
+        } else {
+            return null;
+        }
+
+        return null; // TEMP
+    }
+
+    private void assign() {
+        if (accept(Type.IDENTIFIER)) {
+            factors();
+            terms();
+            compares();
+        } else if (accept(Type.INT_LITERAL)) {
+            factors();
+            terms();
+            compares();
+        } else if (accept(Type.FLOAT_LITERAL)) {
+            factors();
+            terms();
+            compares();
+        } else if (accept(Type.OPEN_P)) {
+            expr();
+            expect(Type.CLOSE_P);
+            factors();
+            terms();
+            compares();
         }
     }
 
-    //Luke: EQUALS(){} goes here
+    private Arith equals() {
+        if (accept(Type.DOUBLE_EQUAL)) {
+            equal();
+            equals();
+        } else if (accept(Type.NEQ)) {
+            equal();
+            equals();
+        } else {
+            return null;
+        }
 
-    //Luke:EQUAL(){} goes here
+        return null; // TEMP
+    }
 
-    //LUKE: COMPARES(){} goes here
+    private void equal() {
+        if (accept(Type.IDENTIFIER)) {
+            factors();
+            terms();
+            compares();
+        } else if (accept(Type.INT_LITERAL)) {
+            factors();
+            terms();
+            compares();
+        } else if (accept(Type.FLOAT_LITERAL)) {
+            factors();
+            terms();
+            compares();
+        } else if (accept(Type.OPEN_P)) {
+            expr();
+            expect(Type.CLOSE_P);
+            factors();
+            terms();
+            compares();
+        }
+    }
+
+    private Arith compares() {
+        if (accept(Type.LESS)) {
+            compare();
+            compares();
+        } else if (accept(Type.MORE)) {
+            compare();
+            compares();
+        } else if (accept(Type.LEQ)) {
+            compare();
+            compares();
+        } else if (accept(Type.GEQ)) {
+            compare();
+            compares();
+        } else {
+            return null;
+        }
+
+        return null; // TEMP, return in ifs once compare returns values
+    }
 
     private void compare() {
         if (accept(Type.IDENTIFIER) || accept(Type.INT_LITERAL)
@@ -237,11 +344,13 @@ public class Parser {
         }
     }
 
-    private void terms() {
+    private Arith terms() {
         if (accept(Type.PLUS) || accept(Type.MINUS)) {
             term();
             terms();
         }
+
+        return null;
     }
     
     private void term() {
@@ -268,7 +377,7 @@ public class Parser {
             return new Arith(opcode, value);
         }
         else{
-            throw new RuntimeException("Syntax error: expected a factor");
+            return null;
         }
     }
 
@@ -298,5 +407,9 @@ public class Parser {
         }
 
         throw new RuntimeException();
-    }        
+    }
+
+    private RuntimeException err(String msg) {
+        return new RuntimeException(String.format("%s. Scanner Pos = %s. Recently Consumed Token = %s. Next token = %s.", msg, input.getPos(), token, input.hasNext() ? input.peek() : "END OF INPUT"));
+    }
 }
