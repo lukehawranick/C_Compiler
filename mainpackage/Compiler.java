@@ -1,3 +1,4 @@
+package mainpackage;
 /**
  * @file Compiler.java
  * @brief Main class for the compiler, utilizing all completed components.

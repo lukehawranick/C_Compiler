@@ -1,7 +1,5 @@
 package mainpackage;
 
-import Atom;
-
 /**
  * Holds an operation to be performed.
  */

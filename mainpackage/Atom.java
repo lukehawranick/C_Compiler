@@ -1,3 +1,4 @@
+package mainpackage;
 
 /**
  * @file Atom.java

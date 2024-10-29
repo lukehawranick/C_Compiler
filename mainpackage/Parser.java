@@ -1,3 +1,4 @@
+package mainpackage;
 /**
  * @file Parser.java
  * @brief An implementation of Parser: taking token inputs into atom outputs.

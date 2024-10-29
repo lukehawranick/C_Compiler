@@ -1,3 +1,4 @@
+package mainpackage;
 /**
  * @file SourceStream.java
  * @brief A SourceStream that reads source code input.

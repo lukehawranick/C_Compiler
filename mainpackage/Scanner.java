@@ -1,3 +1,4 @@
+package mainpackage;
 /**
  * @file Scanner.java
  * @brief A Scanner that tokenizes source code input.

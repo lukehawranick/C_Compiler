@@ -1,3 +1,4 @@
+package mainpackage;
 /**
  * @file FSM.java
  * @brief An implementation of the FSM used by the Scanner.

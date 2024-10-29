@@ -1,3 +1,4 @@
+package mainpackage;
 /**
  * @file Token.java
  * @brief This class represents a token that the Scanner has generated from source
