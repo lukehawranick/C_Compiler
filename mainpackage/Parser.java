@@ -9,6 +9,8 @@ package mainpackage;
 
 import static mainpackage.Token.Type;
 
+import mainpackage.Token.Type;
+
 public class Parser {
     private Scanner input;
     /**
@@ -159,27 +161,51 @@ public class Parser {
      /**
       * Returns the value that contains the result of this expression.
       */
-     private String expr(){
-        if(accept(Type.IDENTIFIER)){
-            Token lhs = token;
+     private String expr() {
+        if(accept(Type.IDENTIFIER)) {
+            String value = token.value;
+
+            Arith arith = factors();
+            if (arith != null) {
+                String newVal = tempVar();
+                output(new Atom(arith.operator, value, arith.rhs, newVal));
+                value = newVal;
+            }
+
+            arith = terms(); // TODO: Left off here. Handle just like factors was handled.
+            if (arith != null) {
+                String newVal = tempVar();
+                output(new Atom(arith.operator, value, arith.rhs, newVal));
+                value = newVal;
+            }
+
+            arith = compares();
+            if (arith != null) {
+                String newVal = tempVar();
+                output(new Atom(arith.operator, value, arith.rhs, newVal));
+                value = newVal;
+            }
+
+            arith = equals();
+            if (arith != null) {
+                String newVal = tempVar();
+                output(new Atom(arith.operator, value, arith.rhs, newVal));
+                value = newVal;
+            }
+        }
+        else if (accept(Type.INT)) {
             factors();
             terms();
             compares();
             equals();
         }
-        else if (accept(Type.INT)){
+        else if (accept(Type.FLOAT)) {
             factors();
             terms();
             compares();
             equals();
         }
-        else if (accept(Type.FLOAT)){
-            factors();
-            terms();
-            compares();
-            equals();
-        }
-        else if (accept(Type.OPEN_P)){
+        else if (accept(Type.OPEN_P)) {
             expr();
             expect(Type.CLOSE_P);
             factors();
@@ -192,57 +218,11 @@ public class Parser {
         }
     }
 
-    private void equals() {
-        if (accept(Type.DOUBLE_EQUAL)) {
-            equal();
-            equals();
-        } else if (accept(Type.NEQ)) {
-            equal();
-            equals();
-        } else {
-            throw new RuntimeException();
-        }
-    }
+    //Luke: EQUALS(){} goes here
 
-    private void equal() {
-        if (accept(Type.IDENTIFIER)) {
-            factors();
-            terms();
-            compares();
-        } else if (accept(Type.INT_LITERAL)) {
-            factors();
-            terms();
-            compares();
-        } else if (accept(Type.FLOAT_LITERAL)) {
-            factors();
-            terms();
-            compares();
-        } else if (accept(Type.OPEN_P)) {
-            expr();
-            expect(Type.CLOSE_P);
-            factors();
-            terms();
-            compares();
-        }
-    }
+    //Luke:EQUAL(){} goes here
 
-    private void compares() {
-        if (accept(Type.LESS)) {
-            compare();
-            compares();
-        } else if (accept(Type.MORE)) {
-            compare();
-            compares();
-        } else if (accept(Type.LEQ)) {
-            compare();
-            compares();
-        } else if (accept(Type.GEQ)) {
-            compare();
-            compares();
-        } else {
-            throw new RuntimeException();
-        }
-    }
+    //LUKE: COMPARES(){} goes here
 
     private void compare() {
         if (accept(Type.IDENTIFIER) || accept(Type.INT_LITERAL)
