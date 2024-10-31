@@ -19,11 +19,13 @@ public class Parser {
      */
     private Token token;
     private int nextTempVarNum;
+    private int nextTempLabelNum;
 
     public Parser(Scanner input, Consumer<Atom> output) {
         this.input = input;
         this.output = output;
         nextTempVarNum = 0;
+        nextTempLabelNum = 0;
     }
     
     public void parse() {
@@ -38,6 +40,10 @@ public class Parser {
 
     private String tempVar() {
         return "t" + nextTempVarNum++;
+    }
+
+    private String tempLabel() {
+        return "l" + nextTempLabelNum++;
     }
 
     /**
@@ -75,18 +81,51 @@ public class Parser {
 
     private void stmt() {
         if (accept(Type.INT) || accept(Type.FLOAT)) {
-            Token type = token;
-            Token variable = expect(Type.IDENTIFIER);
+            Token type = token; // TODO: How to handle types?
+            String variable = expect(Type.IDENTIFIER).value;
             expect(Type.EQUAL);
-            expr();
+            String value = expr();
+            output(new Atom(Atom.Opcode.MOV, value, null, variable));
             expect(Type.SEMICOLON);
             stmt();
         } else if (accept(Type.IDENTIFIER) || accept(Type.INT_LITERAL) || accept(Type.FLOAT_LITERAL)) {
-            factors();
-            terms();
-            compares();
-            equals();
-            assigns();
+            String value = token.value;
+
+            Arith arith;
+            
+            arith = factors();
+            if (arith != null) {
+                String newValue = tempVar();
+                output(new Atom(arith.operator, value, arith.rhs, newValue));
+                value = newValue;
+            }
+
+            arith = terms();
+            if (arith != null) {
+                String newValue = tempVar();
+                output(new Atom(arith.operator, value, arith.rhs, newValue));
+                value = newValue;
+            }
+
+            Comp comp = compares();
+            if (comp != null) {
+                String newValue = tempVar();
+                output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, newValue));
+                value = newValue;
+            }
+
+            comp = equals();
+            if (comp != null) {
+                String newValue = tempVar();
+                output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, newValue));
+                value = newValue;
+            }
+
+            String assignsRHS = assigns();
+            if (assignsRHS != null) {
+                output(new Atom(Atom.Opcode.MOV, assignsRHS, null, value));
+            }
+
             expect(Type.SEMICOLON);
             stmt();
         } else if (accept(Type.OPEN_P)) {
@@ -193,24 +232,24 @@ public class Parser {
                 value = newVal;
             }
 
-            arith = compares();
-            if (arith != null) {
+            Comp comp = compares();
+            if (comp != null) {
                 String newVal = tempVar();
-                output(new Atom(arith.operator, value, arith.rhs, newVal));
+                output(new Atom(Atom.Opcode.TST, value, comp.rhs, newVal));
                 value = newVal;
             }
 
-            arith = equals();
-            if (arith != null) {
+            comp = equals();
+            if (comp != null) {
                 String newVal = tempVar();
-                output(new Atom(arith.operator, value, arith.rhs, newVal));
+                output(new Atom(Atom.Opcode.TST, value, comp.rhs, newVal));
                 value = newVal;
             }
 
-            arith = assigns();
-            if (arith != null) {
+            String assignRHS = assigns();
+            if (assignRHS != null) {
                 // TODO: Ensure 'value' is an identifier somehow? Where should this be done? In grammar somehow? Here somehow?
-                output(new Atom(Atom.Opcode.MOV, arith.rhs, null, value));
+                output(new Atom(Atom.Opcode.MOV, assignRHS, null, value));
             }
 
             return value;
@@ -242,7 +281,7 @@ public class Parser {
         return "EXPRSTR";
     }
 
-    private Arith assigns() {
+    private String assigns() {
         if (accept(Type.EQUAL)) {
             assign();
             assigns();
@@ -250,7 +289,7 @@ public class Parser {
             return null;
         }
 
-        return null; // TEMP
+        return "ASSIGNS"; // TEMP
     }
 
     private void assign() {
@@ -275,7 +314,7 @@ public class Parser {
         }
     }
 
-    private Arith equals() {
+    private Comp equals() {
         if (accept(Type.DOUBLE_EQUAL)) {
             equal();
             equals();
@@ -286,7 +325,7 @@ public class Parser {
             return null;
         }
 
-        return null; // TEMP
+        return new Comp("EQUALSCMP", "EQUALSRHS"); // TEMP
     }
 
     private void equal() {
@@ -311,7 +350,7 @@ public class Parser {
         }
     }
 
-    private Arith compares() {
+    private Comp compares() {
         if (accept(Type.LESS)) {
             compare();
             compares();
@@ -328,7 +367,7 @@ public class Parser {
             return null;
         }
 
-        return null; // TEMP, return in ifs once compare returns values
+        return new Comp("COMPARESCMP", "COMPARESRHS"); // TEMP, return in ifs once compare returns values
     }
 
     private void compare() {
