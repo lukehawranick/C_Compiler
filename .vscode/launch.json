@@ -9,7 +9,7 @@
             "name": "Current File",
             "request": "launch",
             "mainClass": "${file}",
-            "args": "-s sourcecode.myc -t tokens.tok"
+            "args": "-s sourcecode.myc"
         },
         {
             "type": "java",

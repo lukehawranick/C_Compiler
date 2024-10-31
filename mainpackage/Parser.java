@@ -346,27 +346,56 @@ public class Parser {
 
     private Arith terms() {
         if (accept(Type.PLUS) || accept(Type.MINUS)) {
-            term();
-            terms();
+            Atom.Opcode opcode = Atom.Opcode.tokenToOpcode(token);
+            String value = term();
+
+            Arith arith = terms();
+            if (arith != null) {
+                String newValue = tempVar();
+                output(new Atom(arith.operator, value, arith.rhs, newValue));
+                value = newValue;
+            }
+
+            arith = factors();
+            if (arith != null) {
+                String newVal = tempVar();
+                output(new Atom(arith.operator, value, arith.rhs, newVal));
+                value = newVal;
+            }
+
+            return new Arith(opcode, value);
         }
 
         return null;
     }
     
-    private void term() {
-        if (accept(Type.IDENTIFIER) || accept(Type.INT_LITERAL) || accept(Type.FLOAT_LITERAL) || accept(Type.OPEN_P)) {
-            if (accept(Type.OPEN_P)) {
-                expr();
-                expect(Type.CLOSE_P);
-            }
-            factors();
+    private String term() {
+        String value;
+        if (accept(Type.OPEN_P)) {
+            value = expr();
+            expect(Type.CLOSE_P);
+        } else if (accept(Type.IDENTIFIER) || accept(Type.INT_LITERAL) || accept(Type.FLOAT_LITERAL)) {
+            value = token.value;
+        } else {
+            throw new ParseException("");
         }
+
+        Arith arith = factors();
+
+        if (arith != null) {
+            String newValue = tempVar();
+            output(new Atom(arith.operator, value, arith.rhs, newValue));
+            value = newValue;
+        }
+
+        return token.value;
      }
 
     private Arith factors() {
         if (accept(Type.MULT) || accept(Type.DIV)) {
             Atom.Opcode opcode = Atom.Opcode.tokenToOpcode(token);
             String value = factor();
+            
             Arith arith = factors();
             if (arith != null) {
                 String newVal = tempVar();
