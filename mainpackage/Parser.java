@@ -7,6 +7,9 @@ package mainpackage;
  * @date 10/23/2024
  */
 
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Stack;
 import java.util.function.Consumer;
 import mainpackage.Token.Type;
 
@@ -19,13 +22,15 @@ public class Parser {
      */
     private Token token;
     private int nextTempVarNum;
-    private int nextTempLabelNum;
+    private int nextLabelNum;
+
+    private Stack<List<Atom>> capturedOutput = new Stack<List<Atom>>();
 
     public Parser(Scanner input, Consumer<Atom> output) {
         this.input = input;
         this.output = output;
         nextTempVarNum = 0;
-        nextTempLabelNum = 0;
+        nextLabelNum = 0;
     }
     
     public void parse() {
@@ -34,16 +39,39 @@ public class Parser {
             throw new RuntimeException("Syntax error: unexpected tokens at end of input: " + input.peek());
     }
 
+    /**
+     * Diverts output into a list to be handled later.
+     */
+    private void startCapturingOutput() {
+        capturedOutput.push(new LinkedList<>());
+    }
+
+    /**
+     * Returns the captured output and sends future output to 'output' again.
+     * @return
+     */
+    private List<Atom> stopCapturingOutput() {
+        return capturedOutput.pop();
+    }
+
     private void output(Atom atom) {
-        output.accept(atom);
+        if (!capturedOutput.isEmpty())
+            capturedOutput.peek().add(atom);
+        else
+            output.accept(atom);
+    }
+
+    private void output(List<Atom> atoms) {
+        for (Atom a : atoms)
+            output(a);
     }
 
     private String tempVar() {
         return "t" + nextTempVarNum++;
     }
 
-    private String tempLabel() {
-        return "l" + nextTempLabelNum++;
+    private String newLabel() {
+        return "l" + nextLabelNum++;
     }
 
     /**
@@ -88,8 +116,14 @@ public class Parser {
             output(new Atom(Atom.Opcode.MOV, value, null, variable));
             expect(Type.SEMICOLON);
             stmt();
-        } else if (accept(Type.IDENTIFIER) || accept(Type.INT_LITERAL) || accept(Type.FLOAT_LITERAL)) {
-            String value = token.value;
+        } else if (accept(Type.IDENTIFIER) || accept(Type.INT_LITERAL) || accept(Type.FLOAT_LITERAL) || accept(Type.OPEN_P)) {
+            String value;
+            if (token.type == Type.OPEN_P) {
+                value = expr();
+                expect(Token.Type.CLOSE_P);
+            }
+            else
+                value = token.value;
 
             Arith arith;
             
@@ -110,14 +144,14 @@ public class Parser {
             Comp comp = compares();
             if (comp != null) {
                 String newValue = tempVar();
-                output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, newValue));
+                output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, newValue)); // TODO: This is wrong!
                 value = newValue;
             }
 
             comp = equals();
             if (comp != null) {
                 String newValue = tempVar();
-                output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, newValue));
+                output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, newValue)); // TODO: This is wrong!
                 value = newValue;
             }
 
@@ -128,37 +162,53 @@ public class Parser {
 
             expect(Type.SEMICOLON);
             stmt();
-        } else if (accept(Type.OPEN_P)) {
-            expr();
-            expect(Type.CLOSE_P);
-            factors();
-            terms();
-            compares();
-            equals();
-            assigns();
-            expect(Type.SEMICOLON);
-            stmt();
         } else if (accept(Type.IF)) {
+            String avoidElse = newLabel();
+            String avoidBlock = newLabel();
+
             expect(Type.OPEN_P);
-            expr();
+            String condition = expr();
             expect(Type.CLOSE_P);
+            output(new Atom(Atom.Opcode.TST, condition, "1", null, "!=", avoidBlock)); // skip if block and execute else block if condition != 1
             block();
+            output(new Atom(Atom.Opcode.JMP, null, null, null, null, avoidElse)); // already executed if block. skip else block if condition == 1
+            output(new Atom(Atom.Opcode.LBL, null, null, null, null, avoidBlock));
             _else();
+            output(new Atom(Atom.Opcode.LBL, null, null, null, null, avoidElse));
             stmt();
         } else if (accept(Type.FOR)) {
+            String loop = newLabel();
+            String exit = newLabel();
+
             expect(Type.OPEN_P);
             pre();
-            expr();
+            startCapturingOutput();
+            String conditionValue = expr();
+            List<Atom> condition = stopCapturingOutput();
             expect(Type.SEMICOLON);
+            startCapturingOutput();
             expr();
+            List<Atom> increment = stopCapturingOutput();
             expect(Type.CLOSE_P);
+            output(new Atom(Atom.Opcode.LBL, null, null, null, null, loop));
+            output(condition);
+            output(new Atom(Atom.Opcode.TST, conditionValue, "1", null, "!=", exit));
             block();
+            output(increment);
+            output(new Atom(Atom.Opcode.JMP, null, null, null, null, loop));
+            output(new Atom(Atom.Opcode.LBL, null, null, null, null, exit));
             stmt();
         } else if (accept(Type.WHILE)) {
+            String loop = newLabel();
+            String exit = newLabel();
+
             expect(Type.OPEN_P);
-            expr();
+            String condition = expr();
             expect(Type.CLOSE_P);
+            output(new Atom(Atom.Opcode.TST, condition, "1", null, "!=", exit));
             block();
+            output(new Atom(Atom.Opcode.JMP, null, null, null, null, loop));
+            output(new Atom(Atom.Opcode.LBL, null, null, null, null, exit));
             stmt();
         } else {
             if (!input.hasNext() || peek(Token.Type.CLOSE_B))
