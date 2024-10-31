@@ -227,7 +227,7 @@ public class Parser {
     private void _else() {
         if (accept(Type.ELSE))
             block();
-        else if (peek(Type.INT) || peek(Type.FLOAT) || peek(Type.IDENTIFIER) || peek(Type.INT_LITERAL)
+        else if (!input.hasNext() || peek(Type.INT) || peek(Type.FLOAT) || peek(Type.IDENTIFIER) || peek(Type.INT_LITERAL)
            || peek(Type.FLOAT_LITERAL) || peek(Type.OPEN_P) || peek(Type.IF) || peek(Type.FOR)
            || peek (Type.WHILE) || peek(Type.CLOSE_B)) {
             // Pass
