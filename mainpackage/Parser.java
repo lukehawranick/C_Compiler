@@ -244,13 +244,12 @@ public class Parser {
 
     private Arith assigns() {
         if (accept(Type.EQUAL)) {
-            assign();
-            assigns();
-        } else {
-            return null;
+            String value = expr();
+            String dest = token.value;
+            output(new Atom(Atom.Opcode.MOV, value, null, dest));
+            return new Arith(Atom.Opcode.MOV, dest);
         }
-
-        return null; // TEMP
+        return null;
     }
 
     private void assign() {
