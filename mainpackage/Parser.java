@@ -312,23 +312,29 @@ public class Parser {
     }
 
     private Arith compares() {
+        int cmpCode = -1;
         if (accept(Type.LESS)) {
-            compare();
-            compares();
+            cmpCode = 2;  // lesser
         } else if (accept(Type.MORE)) {
-            compare();
-            compares();
+            cmpCode = 3;  // greater
         } else if (accept(Type.LEQ)) {
-            compare();
-            compares();
+            cmpCode = 4;  // lesser or equal
         } else if (accept(Type.GEQ)) {
-            compare();
-            compares();
-        } else {
-            return null;
+            cmpCode = 5;  // greater or equal
+        } else if (accept(Type.NEQ)) {
+            cmpCode = 6;  // not equal
+        } else if (accept(Type.DOUBLE_EQUAL)) {
+            cmpCode = 1;  // equal
         }
-
-        return null; // TEMP, return in ifs once compare returns values
+    
+        if (cmpCode != -1) {
+            String left = token.value;
+            String right = expect(Type.IDENTIFIER).value;
+            String dest = "someDestinationLabel";  // Define as per logic
+            output(new Atom(Atom.Opcode.TST, left, right, cmpCode, dest));
+            return new Arith(Atom.Opcode.TST, dest);
+        }
+        return null;
     }
 
     private void compare() {
