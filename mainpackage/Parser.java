@@ -7,33 +7,33 @@ package mainpackage;
  * @date 10/23/2024
  */
 
+import java.util.function.Consumer;
 import mainpackage.Token.Type;
 
 public class Parser {
-    private Scanner input;
+    private final Scanner input;
+    private final Consumer<Atom> output;
+    
     /**
      * The most recently consumed token.
      */
     private Token token;
     private int nextTempVarNum;
 
-    public Parser(Scanner input) {
+    public Parser(Scanner input, Consumer<Atom> output) {
         this.input = input;
+        this.output = output;
         nextTempVarNum = 0;
     }
     
     public void parse() {
         stmt();
-        if (!input.hasNext()) {
-            System.out.println("Parsing successful");
-        } else {
+        if (input.hasNext())
             throw new RuntimeException("Syntax error: unexpected tokens at end of input: " + input.peek());
-        }
     }
 
-    // TODO: Implement a way to provide output (implement iterator)
-    public void output(Atom atom) {
-        System.out.println(atom);
+    private void output(Atom atom) {
+        output.accept(atom);
     }
 
     private String tempVar() {
@@ -60,7 +60,7 @@ public class Parser {
      */
     private Token expect(int terminal) {
         if (!accept(terminal))
-            throw err("Expected not present. Expected = " + Token.tokenTypeToString(terminal));
+            throw new ParseException("Expected not present. Expected = " + Token.tokenTypeToString(terminal));
         return token;
     }
 
@@ -123,9 +123,9 @@ public class Parser {
             stmt();
         } else {
             if (!input.hasNext() || peek(Token.Type.CLOSE_B))
-                return; // follow set: {CLOSE_B, END OF INPUT}
+                return;
             else
-                throw err("STMT ERROR");
+                throw new ParseException("STMT ERROR");
         }
     }
 
@@ -144,7 +144,7 @@ public class Parser {
             // Pass
         }
         else {
-            throw err("Follow set conditions not met.");
+            throw new ParseException("Follow set conditions not met.");
         }
     }
 
@@ -409,7 +409,21 @@ public class Parser {
         throw new RuntimeException();
     }
 
-    private RuntimeException err(String msg) {
-        return new RuntimeException(String.format("%s. Scanner Pos = %s. Recently Consumed Token = %s. Next token = %s.", msg, input.getPos(), token, input.hasNext() ? input.peek() : "END OF INPUT"));
+    /**
+     * An inner class that when constructed, captures information about the current state of the parser.
+     */
+    public class ParseException extends RuntimeException {
+        public final String msg;
+        public final String scannerPos;
+        public final Token recentlyConsumedToken;
+        public final Token nextToken;
+
+        public ParseException(String msg) {
+            super(String.format("%s. Scanner Pos = %s. Recently Consumed Token = %s. Next Token = %s.", msg, input.getPos(), token, input.hasNext() ? input.peek() : "END OF INPUT"));
+            this.msg = msg;
+            this.scannerPos = input.getPos();
+            this.recentlyConsumedToken = token;
+            this.nextToken = input.hasNext() ? input.peek() : null;
+        }
     }
 }

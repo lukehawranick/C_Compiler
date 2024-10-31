@@ -1,0 +1,22 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Current File",
+            "request": "launch",
+            "mainClass": "${file}",
+            "args": "-s sourcecode.myc -t tokens.tok"
+        },
+        {
+            "type": "java",
+            "name": "Compiler",
+            "request": "launch",
+            "mainClass": "mainpackage.Compiler",
+            "projectName": "C_Compiler_8f558859"
+        }
+    ]
+}
