@@ -261,12 +261,19 @@ public class Parser {
     }
 
     private void pre() {
-        if (!accept(Type.INT))
-            accept(Type.FLOAT);
-            
-        expect(Type.IDENTIFIER);
+        Token type;
+        if (accept(Type.INT)) {
+            type = token;
+        } else if (accept(Type.FLOAT)) {
+            type = token;
+        } else {
+            throw new ParseException("Syntax error: expected type");
+        }
+    
+        String variable = expect(Type.IDENTIFIER).value;
         expect(Type.EQUAL);
-        expr();
+        String value = expr();
+        output(new Atom(Atom.Opcode.MOV, value, null, variable));
         expect(Type.SEMICOLON);
      }
 
@@ -343,25 +350,34 @@ public class Parser {
         return null;
     }
 
-    private void assign() {
+    private String assign() {
+        String value;
         if (accept(Type.IDENTIFIER)) {
-            factors();
-            terms();
-            compares();
-        } else if (accept(Type.INT_LITERAL)) {
-            factors();
-            terms();
-            compares();
-        } else if (accept(Type.FLOAT_LITERAL)) {
-            factors();
-            terms();
-            compares();
-        } else if (accept(Type.OPEN_P)) {
-            expr();
-            expect(Type.CLOSE_P);
-            factors();
-            terms();
-            compares();
+            value = token.value;
+            Arith arith = factors();
+            if (arith != null) {
+                String newValue = tempVar();
+                output(new Atom(arith.operator, value, arith.rhs, newValue));
+                value = newValue;
+            }
+    
+            arith = terms();
+            if (arith != null) {
+                String newValue = tempVar();
+                output(new Atom(arith.operator, value, arith.rhs, newValue));
+                value = newValue;
+            }
+    
+            Comp comp = compares();
+            if (comp != null) {
+                String newValue = tempVar();
+                output(new Atom(Atom.Opcode.TST, value, comp.rhs, newValue)); 
+                value = newValue;
+            }
+    
+            return value;
+        } else {
+            throw new ParseException("Syntax error: expected identifier");
         }
     }
 
