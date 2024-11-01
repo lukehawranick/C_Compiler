@@ -386,89 +386,115 @@ public class Parser {
     }
 
     private Comp equals() {
-        if (accept(Type.DOUBLE_EQUAL)) {
-            equal();
-            equals();
-        } else if (accept(Type.NEQ)) {
-            equal();
-            equals();
-        } else {
+        if (!accept(Type.DOUBLE_EQUAL, Type.NEQ))
             return null;
+
+        String cmpCode = Atom.Opcode.compToNumber(token);
+        String value = equal();
+
+        Comp comp = equals();
+        if (comp != null) {
+            String newValue = tempVar();
+            // TODO: make a comparison
+            value = newValue;
         }
 
-        return new Comp("EQUALSCMP", "EQUALSRHS"); // TEMP
+        return new Comp(cmpCode, value);
     }
 
-    private void equal() {
-        if (accept(Type.IDENTIFIER)) {
-            factors();
-            terms();
-            compares();
-        } else if (accept(Type.INT_LITERAL)) {
-            factors();
-            terms();
-            compares();
-        } else if (accept(Type.FLOAT_LITERAL)) {
-            factors();
-            terms();
-            compares();
-        } else if (accept(Type.OPEN_P)) {
-            expr();
+    private String equal() {
+        String value;
+        if (accept(Type.OPEN_P)) {
+            value = expr();
             expect(Type.CLOSE_P);
-            factors();
-            terms();
-            compares();
+        } else if (accept(Type.IDENTIFIER, Type.INT_LITERAL, Type.FLOAT_LITERAL))
+            value = token.value;
+        else
+            throw new ParseException();
+
+        Arith arith = factors();
+        if (arith != null) {
+            String newValue = tempVar();
+            output(new Atom(arith.operator, value, arith.rhs, newValue));
+            value = newValue;
         }
+
+        arith = terms();
+        if (arith != null) {
+            String newValue = tempVar();
+            output(new Atom(arith.operator, value, arith.rhs, newValue));
+            value = newValue;
+        }
+
+        Comp comp = compares();
+        if (comp != null) {
+            String newValue = tempVar();
+            // TODO: make a comparison
+            value = newValue;
+        }
+
+        return value;
     }
 
     private Comp compares() {
-        String cmpCode;
-        if (accept(Type.LESS, Type.MORE, Type.LEQ, Type.GEQ))
-            cmpCode = Atom.Opcode.compToNumber(token);
-        else
+        if (!accept(Type.LESS, Type.MORE, Type.LEQ, Type.GEQ))
             return null;
-    
-        String right = expect(Type.IDENTIFIER).value;
-        String dest = "someDestinationLabel";  // Define as per logic
-        output(new Atom(Atom.Opcode.TST, null, right, cmpCode, dest));
-        return new Comp(cmpCode, right);
+        
+        String cmpCode = Atom.Opcode.compToNumber(token);
+        String value = compare();
+
+        Comp comp = compares();
+        if (comp != null) {
+            String newValue = tempVar();
+            // TODO: make a comparison
+            value = newValue;
+        }
+
+        return new Comp(cmpCode, value);
     }
 
-    private void compare() {
-        if (accept(Type.IDENTIFIER, Type.INT_LITERAL, Type.FLOAT_LITERAL)) {
-            factors();
-            terms();
-        } else if (accept(Type.OPEN_P)) {
-            expr();
+    private String compare() {
+        String value;
+        if (accept(Type.OPEN_P)) {
+            value = expr();
             expect(Type.CLOSE_P);
-            factors();
-            terms();
+        } else if (accept(Type.IDENTIFIER, Type.INT_LITERAL, Type.FLOAT_LITERAL))
+            value = token.value;
+        else
+            throw new ParseException();
+
+        Arith arith = factors();
+        if (arith != null) {
+            String newValue = tempVar();
+            output(new Atom(arith.operator, value, arith.rhs, newValue));
+            value = newValue;
         }
+
+        arith = terms();
+        if (arith != null) {
+            String newValue = tempVar();
+            output(new Atom(arith.operator, value, arith.rhs, newValue));
+            value = newValue;
+        }
+
+        return value;
     }
 
     private Arith terms() {
-        if (accept(Type.PLUS, Type.MINUS)) {
-            Atom.Opcode opcode = Atom.Opcode.arithToOpcode(token);
-            String value = term();
+        if (!accept(Type.PLUS, Type.MINUS))
+            return null;
+            
+        Atom.Opcode opcode = Atom.Opcode.arithToOpcode(token);
+        String value = term();
 
-            Arith arith = terms();
-            if (arith != null) {
-                String newValue = tempVar();
-                output(new Atom(arith.operator, value, arith.rhs, newValue));
-                value = newValue;
-            }
-
-            arith = factors();
-            if (arith != null) {
-                String newVal = tempVar();
-                output(new Atom(arith.operator, value, arith.rhs, newVal));
-                value = newVal;
-            }
-
-            return new Arith(opcode, value);
+        Arith arith = terms();
+        if (arith != null) {
+            String newValue = tempVar();
+            output(new Atom(arith.operator, value, arith.rhs, newValue));
+            value = newValue;
         }
 
-        return null;
+        return new Arith(opcode, value);
     }
     
     private String term() {
@@ -479,10 +505,9 @@ public class Parser {
         } else if (accept(Type.IDENTIFIER, Type.INT_LITERAL, Type.FLOAT_LITERAL))
             value = token.value;
         else
-            throw new ParseException("");
+            throw new ParseException();
 
         Arith arith = factors();
-
         if (arith != null) {
             String newValue = tempVar();
             output(new Atom(arith.operator, value, arith.rhs, newValue));
@@ -518,22 +543,20 @@ public class Parser {
         } else if (accept(Type.MINUS))
             return value();
         else if (!accept(Type.IDENTIFIER, Type.INT_LITERAL, Type.FLOAT_LITERAL))
-            throw new RuntimeException();
+            throw new ParseException();
         return token.value;
     }
 
     private String value() {
-        if (accept(Type.INT_LITERAL))
-            return token.value;
-        else if(accept(Type.FLOAT_LITERAL))
-            return token.value;
-        else if(accept(Type.OPEN_P)) {
+        if (accept(Type.OPEN_P)) {
             String toReturn = expr();
-            expect(Type.CLOSE_P);
+            expect(Type.OPEN_P);
             return toReturn;
         }
-
-        throw new RuntimeException();
+        if (accept(Type.IDENTIFIER, Type.INT_LITERAL, Type.FLOAT_LITERAL))
+            return token.value;
+        
+        throw new ParseException();
     }
 
     /**
@@ -544,6 +567,10 @@ public class Parser {
         public final String scannerPos;
         public final Token recentlyConsumedToken;
         public final Token nextToken;
+        
+        public ParseException() {
+            this("");
+        }
 
         public ParseException(String msg) {
             super(String.format("%s. Scanner Pos = %s. Recently Consumed Token = %s. Next Token = %s.", msg, input.getPos(), token, input.hasNext() ? input.peek() : "END OF INPUT"));
