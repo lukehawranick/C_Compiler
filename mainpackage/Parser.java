@@ -7,6 +7,9 @@ package mainpackage;
  * @date 10/23/2024
  */
 
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Stack;
 import java.util.function.Consumer;
 import mainpackage.Token.Type;
 
@@ -19,11 +22,15 @@ public class Parser {
      */
     private Token token;
     private int nextTempVarNum;
+    private int nextLabelNum;
+
+    private Stack<List<Atom>> capturedOutput = new Stack<List<Atom>>();
 
     public Parser(Scanner input, Consumer<Atom> output) {
         this.input = input;
         this.output = output;
         nextTempVarNum = 0;
+        nextLabelNum = 0;
     }
     
     public void parse() {
@@ -32,12 +39,39 @@ public class Parser {
             throw new RuntimeException("Syntax error: unexpected tokens at end of input: " + input.peek());
     }
 
+    /**
+     * Diverts output into a list to be handled later.
+     */
+    private void startCapturingOutput() {
+        capturedOutput.push(new LinkedList<>());
+    }
+
+    /**
+     * Returns the captured output and sends future output to 'output' again.
+     * @return
+     */
+    private List<Atom> stopCapturingOutput() {
+        return capturedOutput.pop();
+    }
+
     private void output(Atom atom) {
-        output.accept(atom);
+        if (!capturedOutput.isEmpty())
+            capturedOutput.peek().add(atom);
+        else
+            output.accept(atom);
+    }
+
+    private void output(List<Atom> atoms) {
+        for (Atom a : atoms)
+            output(a);
     }
 
     private String tempVar() {
         return "t" + nextTempVarNum++;
+    }
+
+    private String newLabel() {
+        return "l" + nextLabelNum++;
     }
 
     /**
@@ -75,51 +109,114 @@ public class Parser {
 
     private void stmt() {
         if (accept(Type.INT) || accept(Type.FLOAT)) {
-            Token type = token;
-            Token variable = expect(Type.IDENTIFIER);
+            Token type = token; // TODO: How to handle types?
+            String variable = expect(Type.IDENTIFIER).value;
             expect(Type.EQUAL);
-            expr();
+            String value = expr();
+            output(new Atom(Atom.Opcode.MOV, value, null, variable));
             expect(Type.SEMICOLON);
             stmt();
-        } else if (accept(Type.IDENTIFIER) || accept(Type.INT_LITERAL) || accept(Type.FLOAT_LITERAL)) {
-            factors();
-            terms();
-            compares();
-            equals();
-            assigns();
-            expect(Type.SEMICOLON);
-            stmt();
-        } else if (accept(Type.OPEN_P)) {
-            expr();
-            expect(Type.CLOSE_P);
-            factors();
-            terms();
-            compares();
-            equals();
-            assigns();
+        } else if (accept(Type.IDENTIFIER) || accept(Type.INT_LITERAL) || accept(Type.FLOAT_LITERAL) || accept(Type.OPEN_P)) {
+            String value;
+            if (token.type == Type.OPEN_P) {
+                value = expr();
+                expect(Token.Type.CLOSE_P);
+            }
+            else
+                value = token.value;
+
+            Arith arith;
+            
+            arith = factors();
+            if (arith != null) {
+                String newValue = tempVar();
+                output(new Atom(arith.operator, value, arith.rhs, newValue));
+                value = newValue;
+            }
+
+            arith = terms();
+            if (arith != null) {
+                String newValue = tempVar();
+                output(new Atom(arith.operator, value, arith.rhs, newValue));
+                value = newValue;
+            }
+
+            Comp comp = compares();
+            if (comp != null) {
+                String newValue = tempVar();
+                output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, newValue)); // TODO: This is wrong!
+                value = newValue;
+            }
+
+            comp = equals();
+            if (comp != null) {
+                String newValue = tempVar();
+                output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, newValue)); // TODO: This is wrong!
+                value = newValue;
+            }
+
+            String assignsRHS = assigns();
+            if (assignsRHS != null) {
+                output(new Atom(Atom.Opcode.MOV, assignsRHS, null, value));
+            }
+
             expect(Type.SEMICOLON);
             stmt();
         } else if (accept(Type.IF)) {
+            String avoidBlock = newLabel();
+            
             expect(Type.OPEN_P);
-            expr();
+            String condition = expr();
             expect(Type.CLOSE_P);
+            output(new Atom(Atom.Opcode.TST, condition, "1", null, "!=", avoidBlock)); // skip if block and execute else block if condition != 1
             block();
-            _else();
+            startCapturingOutput();
+            boolean elsePresent = _else();
+            List<Atom> elseAtoms = stopCapturingOutput();
+            String avoidElse = null;
+            if (elsePresent) {
+                avoidElse = newLabel();
+                output(new Atom(Atom.Opcode.JMP, null, null, null, null, avoidElse)); // already executed if block. skip else block if condition == 1
+            }
+            output(new Atom(Atom.Opcode.LBL, null, null, null, null, avoidBlock));
+            output(elseAtoms);
+            if (elsePresent)
+                output(new Atom(Atom.Opcode.LBL, null, null, null, null, avoidElse));
             stmt();
         } else if (accept(Type.FOR)) {
+            String loop = newLabel();
+            String exit = newLabel();
+
             expect(Type.OPEN_P);
             pre();
-            expr();
+            startCapturingOutput();
+            String conditionValue = expr();
+            List<Atom> condition = stopCapturingOutput();
             expect(Type.SEMICOLON);
+            startCapturingOutput();
             expr();
+            List<Atom> increment = stopCapturingOutput();
             expect(Type.CLOSE_P);
+            output(new Atom(Atom.Opcode.LBL, null, null, null, null, loop));
+            output(condition);
+            output(new Atom(Atom.Opcode.TST, conditionValue, "1", null, "!=", exit));
             block();
+            output(increment);
+            output(new Atom(Atom.Opcode.JMP, null, null, null, null, loop));
+            output(new Atom(Atom.Opcode.LBL, null, null, null, null, exit));
             stmt();
         } else if (accept(Type.WHILE)) {
+            String loop = newLabel();
+            String exit = newLabel();
+
+            output(new Atom(Atom.Opcode.LBL, null, null, null, null, loop));
             expect(Type.OPEN_P);
-            expr();
+            String condition = expr();
             expect(Type.CLOSE_P);
+            output(new Atom(Atom.Opcode.TST, condition, "1", null, "!=", exit));
             block();
+            output(new Atom(Atom.Opcode.JMP, null, null, null, null, loop));
+            output(new Atom(Atom.Opcode.LBL, null, null, null, null, exit));
             stmt();
         } else {
             if (!input.hasNext() || peek(Token.Type.CLOSE_B))
@@ -135,13 +232,18 @@ public class Parser {
         expect(Type.CLOSE_B);
     }
 
-    private void _else() {
-        if (accept(Type.ELSE))
+    /**
+     * @return True if an else is present, false if not.
+     */
+    private boolean _else() {
+        if (accept(Type.ELSE)) {
             block();
-        else if (peek(Type.INT) || peek(Type.FLOAT) || peek(Type.IDENTIFIER) || peek(Type.INT_LITERAL)
+            return true;
+        }
+        else if (!input.hasNext() || peek(Type.INT) || peek(Type.FLOAT) || peek(Type.IDENTIFIER) || peek(Type.INT_LITERAL)
            || peek(Type.FLOAT_LITERAL) || peek(Type.OPEN_P) || peek(Type.IF) || peek(Type.FOR)
            || peek (Type.WHILE) || peek(Type.CLOSE_B)) {
-            // Pass
+            return false;
         }
         else {
             throw new ParseException("Follow set conditions not met.");
@@ -193,24 +295,24 @@ public class Parser {
                 value = newVal;
             }
 
-            arith = compares();
-            if (arith != null) {
+            Comp comp = compares();
+            if (comp != null) {
                 String newVal = tempVar();
-                output(new Atom(arith.operator, value, arith.rhs, newVal));
+                output(new Atom(Atom.Opcode.TST, value, comp.rhs, newVal));
                 value = newVal;
             }
 
-            arith = equals();
-            if (arith != null) {
+            comp = equals();
+            if (comp != null) {
                 String newVal = tempVar();
-                output(new Atom(arith.operator, value, arith.rhs, newVal));
+                output(new Atom(Atom.Opcode.TST, value, comp.rhs, newVal));
                 value = newVal;
             }
 
-            arith = assigns();
-            if (arith != null) {
+            String assignRHS = assigns();
+            if (assignRHS != null) {
                 // TODO: Ensure 'value' is an identifier somehow? Where should this be done? In grammar somehow? Here somehow?
-                output(new Atom(Atom.Opcode.MOV, arith.rhs, null, value));
+                output(new Atom(Atom.Opcode.MOV, assignRHS, null, value));
             }
 
             return value;
@@ -242,14 +344,15 @@ public class Parser {
         return "EXPRSTR";
     }
 
-    private Arith assigns() {
+    private String assigns() {
         if (accept(Type.EQUAL)) {
             String value = expr();
             String dest = token.value;
             output(new Atom(Atom.Opcode.MOV, value, null, dest));
             return new Arith(Atom.Opcode.MOV, dest);
         }
-        return null;
+
+        return "ASSIGNS"; // TEMP
     }
 
     private void assign() {
@@ -274,7 +377,7 @@ public class Parser {
         }
     }
 
-    private Arith equals() {
+    private Comp equals() {
         if (accept(Type.DOUBLE_EQUAL)) {
             equal();
             equals();
@@ -285,7 +388,7 @@ public class Parser {
             return null;
         }
 
-        return null; // TEMP
+        return new Comp("EQUALSCMP", "EQUALSRHS"); // TEMP
     }
 
     private void equal() {
@@ -310,7 +413,7 @@ public class Parser {
         }
     }
 
-    private Arith compares() {
+    private Comp compares() {
         int cmpCode = -1;
         if (accept(Type.LESS)) {
             cmpCode = 2;  // lesser

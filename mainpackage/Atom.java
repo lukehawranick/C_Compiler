@@ -80,7 +80,7 @@ public class Atom {
          */
         MOV;
 
-        public static Opcode tokenToOpcode(Token token) {
+        public static Opcode tokenToOpcode(Token token) { // TODO move functionality into Arith if its the only one that should be using this???
             switch (token.type) {
                 case Token.Type.PLUS: return ADD;
                 case Token.Type.MINUS: return SUB;
