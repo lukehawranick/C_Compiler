@@ -349,10 +349,10 @@ public class Parser {
             String value = expr();
             String dest = token.value;
             output(new Atom(Atom.Opcode.MOV, value, null, dest));
-            return new Arith(Atom.Opcode.MOV, dest);
+            return value;
         }
 
-        return "ASSIGNS"; // TEMP
+        return null;
     }
 
     private void assign() {
@@ -433,8 +433,8 @@ public class Parser {
             String left = token.value;
             String right = expect(Type.IDENTIFIER).value;
             String dest = "someDestinationLabel";  // Define as per logic
-            output(new Atom(Atom.Opcode.TST, left, right, cmpCode, dest));
-            return new Arith(Atom.Opcode.TST, dest);
+            output(new Atom(Atom.Opcode.TST, left, right, Integer.toString(cmpCode), dest));
+            return new Comp(Integer.toString(cmpCode), right);
         }
         return null;
     }
