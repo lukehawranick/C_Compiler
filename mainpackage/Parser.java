@@ -163,18 +163,25 @@ public class Parser {
             expect(Type.SEMICOLON);
             stmt();
         } else if (accept(Type.IF)) {
-            String avoidElse = newLabel();
             String avoidBlock = newLabel();
-
+            
             expect(Type.OPEN_P);
             String condition = expr();
             expect(Type.CLOSE_P);
             output(new Atom(Atom.Opcode.TST, condition, "1", null, "!=", avoidBlock)); // skip if block and execute else block if condition != 1
             block();
-            output(new Atom(Atom.Opcode.JMP, null, null, null, null, avoidElse)); // already executed if block. skip else block if condition == 1
+            startCapturingOutput();
+            boolean elsePresent = _else();
+            List<Atom> elseAtoms = stopCapturingOutput();
+            String avoidElse = null;
+            if (elsePresent) {
+                avoidElse = newLabel();
+                output(new Atom(Atom.Opcode.JMP, null, null, null, null, avoidElse)); // already executed if block. skip else block if condition == 1
+            }
             output(new Atom(Atom.Opcode.LBL, null, null, null, null, avoidBlock));
-            _else();
-            output(new Atom(Atom.Opcode.LBL, null, null, null, null, avoidElse));
+            output(elseAtoms);
+            if (elsePresent)
+                output(new Atom(Atom.Opcode.LBL, null, null, null, null, avoidElse));
             stmt();
         } else if (accept(Type.FOR)) {
             String loop = newLabel();
@@ -202,6 +209,7 @@ public class Parser {
             String loop = newLabel();
             String exit = newLabel();
 
+            output(new Atom(Atom.Opcode.LBL, null, null, null, null, loop));
             expect(Type.OPEN_P);
             String condition = expr();
             expect(Type.CLOSE_P);
@@ -224,13 +232,18 @@ public class Parser {
         expect(Type.CLOSE_B);
     }
 
-    private void _else() {
-        if (accept(Type.ELSE))
+    /**
+     * @return True if an else is present, false if not.
+     */
+    private boolean _else() {
+        if (accept(Type.ELSE)) {
             block();
+            return true;
+        }
         else if (!input.hasNext() || peek(Type.INT) || peek(Type.FLOAT) || peek(Type.IDENTIFIER) || peek(Type.INT_LITERAL)
            || peek(Type.FLOAT_LITERAL) || peek(Type.OPEN_P) || peek(Type.IF) || peek(Type.FOR)
            || peek (Type.WHILE) || peek(Type.CLOSE_B)) {
-            // Pass
+            return false;
         }
         else {
             throw new ParseException("Follow set conditions not met.");
