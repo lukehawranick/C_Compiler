@@ -99,7 +99,11 @@ public class Atom {
          * Takes in a comparison operator token and returns the number that corresponds to that operator in TST's cmp field.
          */
         public static String compToNumber(Token token) {
-            switch (token.type) {
+            return compToNumber(token.type);
+        }
+
+        public static String compToNumber(int tokenType) {
+            switch (tokenType) {
                 case Token.Type.DOUBLE_EQUAL: return "1";
                 case Token.Type.LESS: return "2";
                 case Token.Type.MORE: return "3";

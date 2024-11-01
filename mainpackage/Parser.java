@@ -36,7 +36,7 @@ public class Parser {
     public void parse() {
         stmt();
         if (input.hasNext())
-            throw new RuntimeException("Syntax error: unexpected tokens at end of input: " + input.peek());
+            throw new ParseException("Syntax error: unexpected tokens at end of input: " + input.peek());
     }
 
     /**
@@ -180,7 +180,7 @@ public class Parser {
             expect(Type.OPEN_P);
             String condition = expr();
             expect(Type.CLOSE_P);
-            output(new Atom(Atom.Opcode.TST, condition, "1", null, "!=", avoidBlock)); // skip if block and execute else block if condition != 1
+            output(new Atom(Atom.Opcode.TST, condition, "1", null, Atom.Opcode.compToNumber(Token.Type.NEQ), avoidBlock)); // skip if block and execute else block if condition != 1
             block();
             startCapturingOutput();
             boolean elsePresent = _else();
@@ -211,7 +211,7 @@ public class Parser {
             expect(Type.CLOSE_P);
             output(new Atom(Atom.Opcode.LBL, null, null, null, null, loop));
             output(condition);
-            output(new Atom(Atom.Opcode.TST, conditionValue, "1", null, "!=", exit));
+            output(new Atom(Atom.Opcode.TST, conditionValue, "1", null, Atom.Opcode.compToNumber(Token.Type.NEQ), exit));
             block();
             output(increment);
             output(new Atom(Atom.Opcode.JMP, null, null, null, null, loop));
@@ -225,7 +225,7 @@ public class Parser {
             expect(Type.OPEN_P);
             String condition = expr();
             expect(Type.CLOSE_P);
-            output(new Atom(Atom.Opcode.TST, condition, "1", null, "!=", exit));
+            output(new Atom(Atom.Opcode.TST, condition, "1", null, Atom.Opcode.compToNumber(Token.Type.NEQ), exit));
             block();
             output(new Atom(Atom.Opcode.JMP, null, null, null, null, loop));
             output(new Atom(Atom.Opcode.LBL, null, null, null, null, exit));
@@ -234,7 +234,7 @@ public class Parser {
             if (!input.hasNext() || peek(Token.Type.CLOSE_B))
                 return;
             else
-                throw new ParseException("STMT ERROR");
+                throw new ParseException();
         }
     }
 
@@ -256,7 +256,7 @@ public class Parser {
         Type.WHILE, Type.CLOSE_B)) {
             return false;
         } else {
-            throw new ParseException("Else exception");
+            throw new ParseException();
         }
     }
 
@@ -272,84 +272,64 @@ public class Parser {
 
      private void inc_op() {
         if (!accept(Type.DOUBLE_PLUS, Type.DOUBLE_MINUS))
-            throw new RuntimeException("Syntax error: expected increment operator");
+            throw new ParseException("Syntax error: expected increment operator");
      }
 
      private void inc() {
         if (accept(Type.IDENTIFIER))
             inc_op();
         else
-            throw new RuntimeException("Syntax error: expected identifier");
+            throw new ParseException("Syntax error: expected identifier");
      }
 
      /**
       * Returns the value that contains the result of this expression.
       */
      private String expr() {
-        if(accept(Type.IDENTIFIER)) {
-            String value = token.value;
-
-            Arith arith = factors();
-            if (arith != null) {
-                String newVal = tempVar();
-                output(new Atom(arith.operator, value, arith.rhs, newVal));
-                value = newVal;
-            }
-
-            arith = terms(); // TODO: Left off here. Handle just like factors was handled.
-            if (arith != null) {
-                String newVal = tempVar();
-                output(new Atom(arith.operator, value, arith.rhs, newVal));
-                value = newVal;
-            }
-
-            Comp comp = compares();
-            if (comp != null) {
-                String newVal = tempVar();
-                output(new Atom(Atom.Opcode.TST, value, comp.rhs, newVal));
-                value = newVal;
-            }
-
-            comp = equals();
-            if (comp != null) {
-                String newVal = tempVar();
-                output(new Atom(Atom.Opcode.TST, value, comp.rhs, newVal));
-                value = newVal;
-            }
-
-            String assignRHS = assigns();
-            if (assignRHS != null) {
-                // TODO: Ensure 'value' is an identifier somehow? Where should this be done? In grammar somehow? Here somehow?
-                output(new Atom(Atom.Opcode.MOV, assignRHS, null, value));
-            }
-
-            return value;
-        }
-        else if (accept(Type.INT_LITERAL)) {
-            factors();
-            terms();
-            compares();
-            equals();
-        }
-        else if (accept(Type.FLOAT_LITERAL)) {
-            factors();
-            terms();
-            compares();
-            equals();
-        }
-        else if (accept(Type.OPEN_P)) {
-            expr();
+        String value;
+        if (accept(Type.OPEN_P)) {
+            value = expr();
             expect(Type.CLOSE_P);
-            factors();
-            terms();
-            compares();
-            equals();
-        }
-        else{
-            throw new RuntimeException(String.format("Syntax error: expected expression. POS=%s. RECENTLY CONSUMED TOKEN=%s. NEXT TOKEN=%s", input.getPos(), token.toString(), input.peek().toString()));
+        } else if (accept(Type.IDENTIFIER, Type.INT_LITERAL, Type.FLOAT_LITERAL))
+            value = token.value;
+        else
+            throw new ParseException();
+
+        Arith arith = factors();
+        if (arith != null) {
+            String newVal = tempVar();
+            output(new Atom(arith.operator, value, arith.rhs, newVal));
+            value = newVal;
         }
 
-        return "EXPRSTR";
+        arith = terms();
+        if (arith != null) {
+            String newVal = tempVar();
+            output(new Atom(arith.operator, value, arith.rhs, newVal));
+            value = newVal;
+        }
+
+        Comp comp = compares();
+        if (comp != null) {
+            String newVal = tempVar();
+            output(new Atom(Atom.Opcode.TST, value, comp.rhs, newVal)); // TODO: This is not how we store the boolean result of the comparison of value vs comp.rhs
+            value = newVal;
+        }
+
+        comp = equals();
+        if (comp != null) {
+            String newVal = tempVar();
+            output(new Atom(Atom.Opcode.TST, value, comp.rhs, newVal)); // TODO: This is not how we store the boolean result of the comparison of value vs comp.rhs
+            value = newVal;
+        }
+
+        String assignRHS = assigns();
+        if (assignRHS != null) {
+            // TODO: Ensure 'value' is an identifier somehow? Where should this be done? In grammar somehow? Here somehow?
+            output(new Atom(Atom.Opcode.MOV, assignRHS, null, value));
+        }
+
+        return value;
     }
 
     private String assigns() {
