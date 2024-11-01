@@ -80,13 +80,33 @@ public class Atom {
          */
         MOV;
 
-        public static Opcode tokenToOpcode(Token token) { // TODO move functionality into Arith if its the only one that should be using this???
+        /**
+         * Takes in an arithmetic operator token and returns an opcode.
+         * @param token
+         * @return
+         */
+        public static Opcode arithToOpcode(Token token) {
             switch (token.type) {
                 case Token.Type.PLUS: return ADD;
                 case Token.Type.MINUS: return SUB;
                 case Token.Type.MULT: return MUL;
                 case Token.Type.DIV: return DIV;
-                default: throw new RuntimeException("Token's type does not correlate with an opcode.");
+                default: throw new IllegalArgumentException("Token's type does not correlate with an opcode.");
+            }
+        }
+
+        /**
+         * Takes in a comparison operator token and returns the number that corresponds to that operator in TST's cmp field.
+         */
+        public static String compToNumber(Token token) {
+            switch (token.type) {
+                case Token.Type.DOUBLE_EQUAL: return "1";
+                case Token.Type.LESS: return "2";
+                case Token.Type.MORE: return "3";
+                case Token.Type.LEQ: return "4";
+                case Token.Type.GEQ: return "5";
+                case Token.Type.NEQ: return "6";
+                default: throw new IllegalArgumentException();
             }
         }
     }

@@ -75,15 +75,20 @@ public class Parser {
     }
 
     /**
-     * Checks to see if the next token matches the terminal and if so, sets the 'token' field to the next token.
+     * Checks to see if the next token matches any terminal provided and if so, sets the 'token' field to the next token.
      * @param terminal The Token.Type to accept.
      * @return True if the next token was of type 'terminal', else false.
      */
-    private boolean accept(int terminal) {
-        if (input.hasNext() && input.peek().type == terminal) {
-            token = input.next();
-            return true;
-        }
+    private boolean accept(int... terminals) {
+        if (!input.hasNext())
+            return false;
+
+        for (int t : terminals)
+            if (input.peek().type == t) {
+                token = input.next();
+                return true;
+            }
+
         return false;
     }
 
@@ -103,12 +108,19 @@ public class Parser {
      * @param terminal
      * @return
      */
-    private boolean peek(int terminal) {
-        return input.hasNext() && input.peek().type == terminal;
+    private boolean peek(int... terminals) {
+        if (!input.hasNext())
+            return false;
+
+        for (int t : terminals)
+            if (input.peek().type == t)
+                return true;
+
+        return false;
     }
 
     private void stmt() {
-        if (accept(Type.INT) || accept(Type.FLOAT)) {
+        if (accept(Type.INT, Type.FLOAT)) {
             Token type = token; // TODO: How to handle types?
             String variable = expect(Type.IDENTIFIER).value;
             expect(Type.EQUAL);
@@ -116,7 +128,7 @@ public class Parser {
             output(new Atom(Atom.Opcode.MOV, value, null, variable));
             expect(Type.SEMICOLON);
             stmt();
-        } else if (accept(Type.IDENTIFIER) || accept(Type.INT_LITERAL) || accept(Type.FLOAT_LITERAL) || accept(Type.OPEN_P)) {
+        } else if (accept(Type.IDENTIFIER, Type.INT_LITERAL, Type.FLOAT_LITERAL, Type.OPEN_P)) {
             String value;
             if (token.type == Type.OPEN_P) {
                 value = expr();
@@ -239,21 +251,19 @@ public class Parser {
         if (accept(Type.ELSE)) {
             block();
             return true;
-        }
-        else if (!input.hasNext() || peek(Type.INT) || peek(Type.FLOAT) || peek(Type.IDENTIFIER) || peek(Type.INT_LITERAL)
-           || peek(Type.FLOAT_LITERAL) || peek(Type.OPEN_P) || peek(Type.IF) || peek(Type.FOR)
-           || peek (Type.WHILE) || peek(Type.CLOSE_B)) {
+        } else if (!input.hasNext() || peek(Type.INT, Type.FLOAT, Type.IDENTIFIER,
+        Type.INT_LITERAL, Type.FLOAT_LITERAL, Type.OPEN_P, Type.IF, Type.FOR,
+        Type.WHILE, Type.CLOSE_B)) {
             return false;
-        }
-        else {
-            throw new ParseException("Follow set conditions not met.");
+        } else {
+            throw new ParseException("Else exception");
         }
     }
 
     private void pre() {
-        if (!accept(Type.INT)) {
+        if (!accept(Type.INT))
             accept(Type.FLOAT);
-        }
+            
         expect(Type.IDENTIFIER);
         expect(Type.EQUAL);
         expr();
@@ -261,17 +271,15 @@ public class Parser {
      }
 
      private void inc_op() {
-        if (!accept(Type.DOUBLE_PLUS) && !accept(Type.DOUBLE_MINUS)) {
+        if (!accept(Type.DOUBLE_PLUS, Type.DOUBLE_MINUS))
             throw new RuntimeException("Syntax error: expected increment operator");
-        }
      }
 
      private void inc() {
-        if (accept(Type.IDENTIFIER)) {
+        if (accept(Type.IDENTIFIER))
             inc_op();
-        } else {
+        else
             throw new RuntimeException("Syntax error: expected identifier");
-        }
      }
 
      /**
@@ -414,34 +422,20 @@ public class Parser {
     }
 
     private Comp compares() {
-        int cmpCode = -1;
-        if (accept(Type.LESS)) {
-            cmpCode = 2;  // lesser
-        } else if (accept(Type.MORE)) {
-            cmpCode = 3;  // greater
-        } else if (accept(Type.LEQ)) {
-            cmpCode = 4;  // lesser or equal
-        } else if (accept(Type.GEQ)) {
-            cmpCode = 5;  // greater or equal
-        } else if (accept(Type.NEQ)) {
-            cmpCode = 6;  // not equal
-        } else if (accept(Type.DOUBLE_EQUAL)) {
-            cmpCode = 1;  // equal
-        }
+        String cmpCode;
+        if (accept(Type.LESS, Type.MORE, Type.LEQ, Type.GEQ))
+            cmpCode = Atom.Opcode.compToNumber(token);
+        else
+            return null;
     
-        if (cmpCode != -1) {
-            String left = token.value;
-            String right = expect(Type.IDENTIFIER).value;
-            String dest = "someDestinationLabel";  // Define as per logic
-            output(new Atom(Atom.Opcode.TST, left, right, Integer.toString(cmpCode), dest));
-            return new Comp(Integer.toString(cmpCode), right);
-        }
-        return null;
+        String right = expect(Type.IDENTIFIER).value;
+        String dest = "someDestinationLabel";  // Define as per logic
+        output(new Atom(Atom.Opcode.TST, null, right, cmpCode, dest));
+        return new Comp(cmpCode, right);
     }
 
     private void compare() {
-        if (accept(Type.IDENTIFIER) || accept(Type.INT_LITERAL)
-            || accept(Type.FLOAT_LITERAL)) {
+        if (accept(Type.IDENTIFIER, Type.INT_LITERAL, Type.FLOAT_LITERAL)) {
             factors();
             terms();
         } else if (accept(Type.OPEN_P)) {
@@ -453,8 +447,8 @@ public class Parser {
     }
 
     private Arith terms() {
-        if (accept(Type.PLUS) || accept(Type.MINUS)) {
-            Atom.Opcode opcode = Atom.Opcode.tokenToOpcode(token);
+        if (accept(Type.PLUS, Type.MINUS)) {
+            Atom.Opcode opcode = Atom.Opcode.arithToOpcode(token);
             String value = term();
 
             Arith arith = terms();
@@ -482,11 +476,10 @@ public class Parser {
         if (accept(Type.OPEN_P)) {
             value = expr();
             expect(Type.CLOSE_P);
-        } else if (accept(Type.IDENTIFIER) || accept(Type.INT_LITERAL) || accept(Type.FLOAT_LITERAL)) {
+        } else if (accept(Type.IDENTIFIER, Type.INT_LITERAL, Type.FLOAT_LITERAL))
             value = token.value;
-        } else {
+        else
             throw new ParseException("");
-        }
 
         Arith arith = factors();
 
@@ -497,11 +490,11 @@ public class Parser {
         }
 
         return token.value;
-     }
+    }
 
     private Arith factors() {
-        if (accept(Type.MULT) || accept(Type.DIV)) {
-            Atom.Opcode opcode = Atom.Opcode.tokenToOpcode(token);
+        if (accept(Type.MULT, Type.DIV)) {
+            Atom.Opcode opcode = Atom.Opcode.arithToOpcode(token);
             String value = factor();
             
             Arith arith = factors();
@@ -513,9 +506,8 @@ public class Parser {
 
             return new Arith(opcode, value);
         }
-        else{
+        else
             return null;
-        }
     }
 
     private String factor() {
@@ -523,21 +515,19 @@ public class Parser {
             String toReturn = expr();
             expect(Type.CLOSE_P);
             return toReturn;
-        } else if (accept(Type.MINUS)) {
+        } else if (accept(Type.MINUS))
             return value();
-        } else if (!accept(Type.IDENTIFIER) && !accept(Type.INT_LITERAL)
-            && !accept(Type.FLOAT_LITERAL)) {
+        else if (!accept(Type.IDENTIFIER, Type.INT_LITERAL, Type.FLOAT_LITERAL))
             throw new RuntimeException();
-        }
         return token.value;
     }
 
     private String value() {
-        if (accept(Type.INT_LITERAL)) {
+        if (accept(Type.INT_LITERAL))
             return token.value;
-        } else if(accept(Type.FLOAT_LITERAL)) {
+        else if(accept(Type.FLOAT_LITERAL))
             return token.value;
-        } else if(accept(Type.OPEN_P)) {
+        else if(accept(Type.OPEN_P)) {
             String toReturn = expr();
             expect(Type.CLOSE_P);
             return toReturn;
