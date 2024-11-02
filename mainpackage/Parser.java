@@ -3,7 +3,7 @@ package mainpackage;
  * @file Parser.java
  * @brief An implementation of Parser: taking token inputs into atom outputs.
  * @authors Jeremy Appiah, Garrett Williams
- * @reviewers 
+ * @reviewers Mallory Anderson
  * @date 10/23/2024
  */
 

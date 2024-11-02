@@ -4,7 +4,7 @@ package mainpackage;
  * @file Atom.java
  * @brief An implementation Atoms taken by Parser.
  * @authors Jeremy Appiah, Garrett Williams
- * @reviewers 
+ * @reviewers Mallory Anderson
  * @date 10/23/2024
  */
 
