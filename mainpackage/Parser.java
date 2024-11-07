@@ -195,6 +195,12 @@ public class Parser {
             Comp comp = compares();
             if (comp != null) {
                 String newValue = tempVar();
+                // TST a < b then trueLbl
+                // newValue = 0
+                // jmp falseLbl
+                // trueLbl:
+                // newValue = 1
+                // falseLbl:
                 output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, newValue)); // TODO: This is wrong!
                 value = newValue;
             }
