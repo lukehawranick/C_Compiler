@@ -8,10 +8,21 @@ package mainpackage;
  * @date 10/23/2024
  */
 
+/**
+ * @brief Defines the Atom class used by the Parser to store the parsed tokens.
+ */
 public class Atom {
+    // The opcode of the Atom.
     public final Opcode opcode;
+
+    // The operands of the Atom.
     private final String[] operands;
 
+    /**
+     * Constructs an Atom with the given opcode and operands.
+     * @param opcode The opcode of the Atom.
+     * @param operands The operands of the Atom.
+     */
     public Atom(Opcode opcode, String... operands) {
         this.opcode = opcode;
         this.operands = operands;
@@ -26,6 +37,9 @@ public class Atom {
         return index >= operands.length ? null : operands[index];
     }
 
+    /**
+     * @brief Returns a string representation of the Atom.
+     */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -42,6 +56,9 @@ public class Atom {
         return sb.toString();
     }
 
+    /**
+     * @brief Defines the possible opcodes for an Atom.
+     */
     public enum Opcode {
         /**
          * (ADD, left, right, result)
@@ -82,8 +99,8 @@ public class Atom {
 
         /**
          * Takes in an arithmetic operator token and returns an opcode.
-         * @param token
-         * @return
+         * @param token The token to convert to an opcode.
+         * @return The opcode that corresponds to the token.
          */
         public static Opcode arithToOpcode(Token token) {
             switch (token.type) {
@@ -96,12 +113,19 @@ public class Atom {
         }
 
         /**
-         * Takes in a comparison operator token and returns the number that corresponds to that operator in TST's cmp field.
+         * @brief Takes in a comparison operator token and returns the number that corresponds to that operator in TST's cmp field.
+         * @param token the token representing the comparison operation
+         * @return a string of the number that corresponds to that operator in TST's cmp field.
          */
         public static String compToNumber(Token token) {
             return compToNumber(token.type);
         }
 
+        /**
+         * @brief Takes in a comparison operator token and returns the number that corresponds to that operator in TST's cmp field.
+         * @param tokenType the integer value representing the token type
+         * @return a string of the number that corresponds to that operator in TST's cmp field.
+         */
         public static String compToNumber(int tokenType) {
             switch (tokenType) {
                 case Token.Type.DOUBLE_EQUAL: return "1";
