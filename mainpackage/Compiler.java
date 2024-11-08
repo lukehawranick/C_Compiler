@@ -56,6 +56,10 @@ public class Compiler {
         } catch (NullPointerException | IOException e) {
             e.printStackTrace();
             System.out.printf("Source file %s not found.\n", sourceFile);
+            return;
+        } catch (Parser.ParseException e) {
+            System.out.printf("%s\n\tScanner Pos (c, r): %s\n\tRecently Consumed Token: %s\n\tNext Token: %s\n", e.msg, e.scannerPos, e.recentlyConsumedToken.toString(), e.nextToken.toString());
+            return;
         }
         
         System.out.println("Finished!");

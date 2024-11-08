@@ -195,14 +195,42 @@ public class Parser {
             Comp comp = compares();
             if (comp != null) {
                 String newValue = tempVar();
-                output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, newValue)); // TODO: This is wrong!
+                String trueLBL = newLabel();
+                String falseLBL = newLabel();
+                // Do comparison: TST a < b then trueLbl
+                output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, trueLBL));
+                // if comparison is not valid then newValue = 0
+                output(new Atom(Atom.Opcode.MOV, "0", null, newValue));
+                // then jmp falseLbl
+                output(new Atom(Atom.Opcode.JMP,null,null,null,null,falseLBL));
+                // trueLbl: [then carry on with remainder of code]
+                output(new Atom(Atom.Opcode.LBL,null,null,null,null,trueLBL));
+                // use mov token to get: newValue = 1
+                output(new Atom(Atom.Opcode.MOV,"1", null, newValue));
+                // return falseLbl:
+
+                output(new Atom(Atom.Opcode.LBL,null,null,null,null,falseLBL));
                 value = newValue;
             }
 
             comp = equals();
             if (comp != null) {
                 String newValue = tempVar();
-                output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, newValue)); // TODO: This is wrong!
+                String trueLBL = newLabel();
+                String falseLBL = newLabel();
+                // Do comparison: TST a < b then trueLbl
+                output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, trueLBL));
+                // if comparison is not valid then newValue = 0
+                output(new Atom(Atom.Opcode.MOV, "0", null, newValue));
+                // then jmp falseLbl
+                output(new Atom(Atom.Opcode.JMP,null,null,null,null,falseLBL));
+                // trueLbl: [then carry on with remainder of code]
+                output(new Atom(Atom.Opcode.LBL,null,null,null,null,trueLBL));
+                // use mov token to get: newValue = 1
+                output(new Atom(Atom.Opcode.MOV,"1", null, newValue));
+                // return falseLbl:
+
+                output(new Atom(Atom.Opcode.LBL,null,null,null,null,falseLBL));
                 value = newValue;
             }
 
@@ -376,16 +404,44 @@ public class Parser {
 
         Comp comp = compares();
         if (comp != null) {
-            String newVal = tempVar();
-            output(new Atom(Atom.Opcode.TST, value, comp.rhs, newVal)); // TODO: This is not how we store the boolean result of the comparison of value vs comp.rhs
-            value = newVal;
+            String newValue = tempVar();
+            String trueLBL = newLabel();
+            String falseLBL = newLabel();
+            // Do comparison: TST a < b then trueLbl
+            output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, trueLBL));
+            // if comparison is not valid then newValue = 0
+            output(new Atom(Atom.Opcode.MOV, "0", null, newValue));
+            // then jmp falseLbl
+            output(new Atom(Atom.Opcode.JMP,null,null,null,null,falseLBL));
+            // trueLbl: [then carry on with remainder of code]
+            output(new Atom(Atom.Opcode.LBL,null,null,null,null,trueLBL));
+            // use mov token to get: newValue = 1
+            output(new Atom(Atom.Opcode.MOV,"1", null, newValue));
+            // return falseLbl:
+
+            output(new Atom(Atom.Opcode.LBL,null,null,null,null,falseLBL));
+            value = newValue;
         }
 
         comp = equals();
         if (comp != null) {
-            String newVal = tempVar();
-            output(new Atom(Atom.Opcode.TST, value, comp.rhs, newVal)); // TODO: This is not how we store the boolean result of the comparison of value vs comp.rhs
-            value = newVal;
+            String newValue = tempVar();
+            String trueLBL = newLabel();
+            String falseLBL = newLabel();
+            // Do comparison: TST a < b then trueLbl
+            output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, trueLBL));
+            // if comparison is not valid then newValue = 0
+            output(new Atom(Atom.Opcode.MOV, "0", null, newValue));
+            // then jmp falseLbl
+            output(new Atom(Atom.Opcode.JMP,null,null,null,null,falseLBL));
+            // trueLbl: [then carry on with remainder of code]
+            output(new Atom(Atom.Opcode.LBL,null,null,null,null,trueLBL));
+            // use mov token to get: newValue = 1
+            output(new Atom(Atom.Opcode.MOV,"1", null, newValue));
+            // return falseLbl:
+
+            output(new Atom(Atom.Opcode.LBL,null,null,null,null,falseLBL));
+            value = newValue;
         }
 
         String assignRHS = assigns();
@@ -463,7 +519,21 @@ public class Parser {
         Comp comp = equals();
         if (comp != null) {
             String newValue = tempVar();
-            // TODO: make a comparison
+            String trueLBL = newLabel();
+            String falseLBL = newLabel();
+            // Do comparison: TST a < b then trueLbl
+            output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, trueLBL));
+            // if comparison is not valid then newValue = 0
+            output(new Atom(Atom.Opcode.MOV, "0", null, newValue));
+            // then jmp falseLbl
+            output(new Atom(Atom.Opcode.JMP,null,null,null,null,falseLBL));
+            // trueLbl: [then carry on with remainder of code]
+            output(new Atom(Atom.Opcode.LBL,null,null,null,null,trueLBL));
+            // use mov token to get: newValue = 1
+            output(new Atom(Atom.Opcode.MOV,"1", null, newValue));
+            // return falseLbl:
+
+            output(new Atom(Atom.Opcode.LBL,null,null,null,null,falseLBL));
             value = newValue;
         }
 
@@ -502,8 +572,22 @@ public class Parser {
         Comp comp = compares();
         if (comp != null) {
             String newValue = tempVar();
-            // TODO: make a comparison
-            value = newValue;
+                String trueLBL = newLabel();
+                String falseLBL = newLabel();
+                // Do comparison: TST a < b then trueLbl
+                output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, trueLBL));
+                // if comparison is not valid then newValue = 0
+                output(new Atom(Atom.Opcode.MOV, "0", null, newValue));
+                // then jmp falseLbl
+                output(new Atom(Atom.Opcode.JMP,null,null,null,null,falseLBL));
+                // trueLbl: [then carry on with remainder of code]
+                output(new Atom(Atom.Opcode.LBL,null,null,null,null,trueLBL));
+                // use mov token to get: newValue = 1
+                output(new Atom(Atom.Opcode.MOV,"1", null, newValue));
+                // return falseLbl:
+
+                output(new Atom(Atom.Opcode.LBL,null,null,null,null,falseLBL));
+                value = newValue;
         }
 
         return value;
@@ -523,8 +607,22 @@ public class Parser {
         Comp comp = compares();
         if (comp != null) {
             String newValue = tempVar();
-            // TODO: make a comparison
-            value = newValue;
+                String trueLBL = newLabel();
+                String falseLBL = newLabel();
+                // Do comparison: TST a < b then trueLbl
+                output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, trueLBL));
+                // if comparison is not valid then newValue = 0
+                output(new Atom(Atom.Opcode.MOV, "0", null, newValue));
+                // then jmp falseLbl
+                output(new Atom(Atom.Opcode.JMP,null,null,null,null,falseLBL));
+                // trueLbl: [then carry on with remainder of code]
+                output(new Atom(Atom.Opcode.LBL,null,null,null,null,trueLBL));
+                // use mov token to get: newValue = 1
+                output(new Atom(Atom.Opcode.MOV,"1", null, newValue));
+                // return falseLbl:
+
+                output(new Atom(Atom.Opcode.LBL,null,null,null,null,falseLBL));
+                value = newValue;
         }
 
         return new Comp(cmpCode, value);
