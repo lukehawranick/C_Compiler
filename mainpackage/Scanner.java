@@ -148,8 +148,14 @@ public class Scanner implements Iterator<Token> {
      * @param tokenChars The characters that are not part of a valid token.
      */
     private static void printInvalidToken(PrintStream to, SourceStream code, StringBuilder tokenChars) {
-        to.println("There are characters that are not part of a valid token: '" +
-        tokenChars.toString() + "' at (column, row) = (" + code.getColumn() +
+        throw new ScannerException("There are characters that are not part of a valid token: '" +
+        tokenChars.toString() + "' at (c, r) = (" + code.getColumn() +
         ", " + code.getRow() + ").");
+    }
+
+    public static class ScannerException extends RuntimeException {
+        public ScannerException(String msg) {
+            super(msg);
+        }
     }
 }

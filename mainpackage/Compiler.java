@@ -57,8 +57,11 @@ public class Compiler {
             e.printStackTrace();
             System.out.printf("Source file %s not found.\n", sourceFile);
             return;
+        } catch(Scanner.ScannerException e) {
+            System.out.printf("Compilation failed. %s", e.getMessage());
+            return;
         } catch (Parser.ParseException e) {
-            System.out.printf("%s\n\tScanner Pos (c, r): %s\n\tRecently Consumed Token: %s\n\tNext Token: %s\n", e.msg, e.scannerPos, e.recentlyConsumedToken.toString(), e.nextToken.toString());
+            System.out.printf("Compilation failed. %s\n\tScanner Pos (c, r): %s\n\tRecently Consumed Token: %s\n\tNext Token: %s\n", e.msg, e.scannerPos, e.recentlyConsumedToken.toString(), e.nextToken.toString());
             return;
         }
         

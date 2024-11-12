@@ -445,10 +445,8 @@ public class Parser {
         }
 
         String assignRHS = assigns();
-        if (assignRHS != null) {
-            // TODO: Ensure 'value' is an identifier somehow? Where should this be done? In grammar somehow? Here somehow?
+        if (assignRHS != null)
             output(new Atom(Atom.Opcode.MOV, assignRHS, null, value));
-        }
 
         return value;
     }
@@ -458,14 +456,16 @@ public class Parser {
      * @return The value that contains the result of this assignment.
      */
     private String assigns() {
-        if (accept(Type.EQUAL)) {
-            String value = expr();
-            String dest = token.value;
-            output(new Atom(Atom.Opcode.MOV, value, null, dest));
-            return value;
-        }
+        if (!accept(Type.EQUAL))
+            return null;
 
-        return null;
+        String value = assign();
+
+        String assignRHS = assigns();
+        if (assignRHS != null)
+            output(new Atom(Atom.Opcode.MOV, assignRHS, null, value));
+            
+        return value;
     }
 
     /**
@@ -476,33 +476,71 @@ public class Parser {
      */
     private String assign() {
         String value;
-        if (accept(Type.IDENTIFIER)) {
+        if (accept(Type.OPEN_P)) {
+            value = expr();
+            expect(Type.CLOSE_P);
+        } else if (accept(Type.IDENTIFIER, Type.INT_LITERAL, Type.FLOAT_LITERAL))
             value = token.value;
-            Arith arith = factors();
-            if (arith != null) {
-                String newValue = tempVar();
-                output(new Atom(arith.operator, value, arith.rhs, newValue));
-                value = newValue;
-            }
-    
-            arith = terms();
-            if (arith != null) {
-                String newValue = tempVar();
-                output(new Atom(arith.operator, value, arith.rhs, newValue));
-                value = newValue;
-            }
-    
-            Comp comp = compares();
-            if (comp != null) {
-                String newValue = tempVar();
-                output(new Atom(Atom.Opcode.TST, value, comp.rhs, newValue)); 
-                value = newValue;
-            }
-    
-            return value;
-        } else {
-            throw new ParseException("Syntax error: expected identifier");
+        else
+            throw new ParseException();
+
+        Arith arith = factors();
+        if (arith != null) {
+            String newValue = tempVar();
+            output(new Atom(arith.operator, value, arith.rhs, newValue));
+            value = newValue;
         }
+
+        arith = terms();
+        if (arith != null) {
+            String newValue = tempVar();
+            output(new Atom(arith.operator, value, arith.rhs, newValue));
+            value = newValue;
+        }
+
+        Comp comp = compares();
+        if (comp != null) {
+            String newValue = tempVar();
+                String trueLBL = newLabel();
+                String falseLBL = newLabel();
+                // Do comparison: TST a < b then trueLbl
+                output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, trueLBL));
+                // if comparison is not valid then newValue = 0
+                output(new Atom(Atom.Opcode.MOV, "0", null, newValue));
+                // then jmp falseLbl
+                output(new Atom(Atom.Opcode.JMP,null,null,null,null,falseLBL));
+                // trueLbl: [then carry on with remainder of code]
+                output(new Atom(Atom.Opcode.LBL,null,null,null,null,trueLBL));
+                // use mov token to get: newValue = 1
+                output(new Atom(Atom.Opcode.MOV,"1", null, newValue));
+                // return falseLbl:
+
+                output(new Atom(Atom.Opcode.LBL,null,null,null,null,falseLBL));
+                value = newValue;
+        }
+
+        comp = equals();
+        if (comp != null) {
+            String newValue = tempVar();
+                String trueLBL = newLabel();
+                String falseLBL = newLabel();
+                // Do comparison: TST a < b then trueLbl
+                output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, trueLBL));
+                // if comparison is not valid then newValue = 0
+                output(new Atom(Atom.Opcode.MOV, "0", null, newValue));
+                // then jmp falseLbl
+                output(new Atom(Atom.Opcode.JMP,null,null,null,null,falseLBL));
+                // trueLbl: [then carry on with remainder of code]
+                output(new Atom(Atom.Opcode.LBL,null,null,null,null,trueLBL));
+                // use mov token to get: newValue = 1
+                output(new Atom(Atom.Opcode.MOV,"1", null, newValue));
+                // return falseLbl:
+
+                output(new Atom(Atom.Opcode.LBL,null,null,null,null,falseLBL));
+                value = newValue;
+        }
+
+        return value;
     }
 
     /**
