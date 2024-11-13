@@ -8,7 +8,6 @@ package mainpackage;
  */
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -81,29 +80,25 @@ public class Scanner implements Iterator<Token> {
      * @returns The token, or null when there are no more valid tokens in the source code stream.
      * @throws IOException If there is an error reading the source code stream.
     */
-    public static Token tokenize(SourceStream code) throws IOException {
+    private static Token tokenize(SourceStream code) throws IOException {
         // begin at the starting state
         int currentState = FSM.State.START;
         StringBuilder tokenValue = new StringBuilder();
 
-        if (!code.hasNext()) return null; // end of input
-        
-        while (Character.isWhitespace(code.peek())) code.next();
-
+        eatWhitespace(code);
         if (!code.hasNext()) return null; // end of input
 
         while (code.hasNext()) {
             char peek = code.peek();
 
-            // whitespace = end of token. Submit if in accepting state, otherwise, raise an error and continue.
+            // whitespace = end of token. Submit if in accepting state, otherwise, raise an error.
             if (Character.isWhitespace(peek)) {
-                code.next();
-                if (FSM.finalState(currentState) != FSM.State.INVALID){
+                if (FSM.finalState(currentState) != FSM.State.INVALID) {
+                    eatWhitespace(code);
                     return new Token(tokenValue.toString(), FSM.finalState(currentState));
                 } else {
-                    tokenValue.append(peek);
-                    printInvalidToken(System.out, code, tokenValue);
-                    return tokenize(code);
+                    tokenValue.append(code.next());
+                    throw new ScannerException("Unidentified token: " + tokenValue.toString(), code.getPos());
                 }
             }
             
@@ -113,14 +108,12 @@ public class Scanner implements Iterator<Token> {
             // there is not a transition given by the next character
             if (nextState == FSM.State.INVALID) {
                 // if the current state is a final state, return the token
-                if (FSM.finalState(currentState) != FSM.State.INVALID){
+                if (FSM.finalState(currentState) != FSM.State.INVALID)
                     return new Token(tokenValue.toString(), FSM.finalState(currentState));
-                } else {
-                    // On invalid input and non-accepting state, abandon word. Continue with next word.
-                    tokenValue.append(peek);
-                    printInvalidToken(System.out, code, tokenValue);
-                    while (code.hasNext() && !Character.isWhitespace(code.peek())) code.next();
-                    return tokenize(code);
+                else {
+                    // On invalid transition and non-accepting state throw.
+                    tokenValue.append(code.next());
+                    throw new ScannerException("Unidentified token: " + tokenValue.toString(), code.getPos());
                 }
             }
             // continue building the token otherwise.
@@ -133,29 +126,29 @@ public class Scanner implements Iterator<Token> {
         // no more input - check if the current state is a final state and handle the result appropriately
         if (FSM.finalState(currentState) != FSM.State.INVALID)
             return new Token(tokenValue.toString(), FSM.finalState(currentState));
-            printInvalidToken(System.out, code, tokenValue);
-        return null; // end of input, there were characters that were not part of a valid token
+        // end of input, there were characters that were not part of a valid token
+        String pos = code.getPos();
+        throw new ScannerException("There are characters that are not part of a valid token: '" +
+                tokenValue.toString() + "' at (c, r) = " + pos + ".", pos);
     }
 
     public String getPos() {
-        return String.format("(%d, %d)", input.getColumn(), input.getRow());
+        return String.format("(%d, %d)", input.getRow(), input.getColumn());
     }
 
-    /**
-     * @brief Prints an error message to the given PrintStream when an invalid token is found.
-     * @param to The PrintStream to print the error message to.
-     * @param code The current source code stream.
-     * @param tokenChars The characters that are not part of a valid token.
-     */
-    private static void printInvalidToken(PrintStream to, SourceStream code, StringBuilder tokenChars) {
-        throw new ScannerException("There are characters that are not part of a valid token: '" +
-        tokenChars.toString() + "' at (c, r) = (" + code.getColumn() +
-        ", " + code.getRow() + ").");
+    private static void eatWhitespace(SourceStream code) throws IOException {
+        try {
+            while (code.hasNext() && Character.isWhitespace(code.peek())) code.next();
+        } catch (NoSuchElementException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static class ScannerException extends RuntimeException {
-        public ScannerException(String msg) {
+        public final String scannerPos;
+        public ScannerException(String msg, String scannerPos) {
             super(msg);
+            this.scannerPos = scannerPos;
         }
     }
 }

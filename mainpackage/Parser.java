@@ -160,7 +160,6 @@ public class Parser {
      */
     private void stmt() {
         if (accept(Type.INT, Type.FLOAT)) {
-            Token type = token; // TODO: How to handle types?
             String variable = expect(Type.IDENTIFIER).value;
             expect(Type.EQUAL);
             String value = expr();
@@ -235,9 +234,8 @@ public class Parser {
             }
 
             String assignsRHS = assigns();
-            if (assignsRHS != null) {
+            if (assignsRHS != null)
                 output(new Atom(Atom.Opcode.MOV, assignsRHS, null, value));
-            }
 
             expect(Type.SEMICOLON);
             stmt();

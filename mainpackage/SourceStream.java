@@ -23,9 +23,9 @@ public class SourceStream implements Closeable {
     private boolean hasNext;
     // The next character to read.
     private char next;
-    // The column of the most recently read character.
+    // The column of the character that is to be read next.
     private int column;
-    // The row of the most recently read character.
+    // The row of the character that is to be read next.
     private int row;
 
     /**
@@ -40,8 +40,8 @@ public class SourceStream implements Closeable {
         hasNext = temp != -1;
         next = (char)temp;
 
-        column = 0;
-        row = 0;
+        column = 1;
+        row = 1;
     }
 
     /**
@@ -88,9 +88,9 @@ public class SourceStream implements Closeable {
         hasNext = temp != -1;
         next = (char)temp;
         
-        if (next == '\n') {
+        if (toReturn == '\n') {
             row++;
-            column = 0;
+            column = 1;
         }
         else
             column++;
@@ -120,18 +120,22 @@ public class SourceStream implements Closeable {
     }
 
     /**
-     * Gets the row of the most recently read character.
-     * @return The row of the most recently read character.
+     * Gets the row of the character that is to be read next.
+     * @return The row of the character that is to be read next.
      */
     public int getRow() {
         return row;
     }
 
     /**
-     * Gets the column of the most recently read character.
-     * @return The column of the most recently read character.
+     * Gets the column of the character that is to be read next.
+     * @return The column of the character that is to be read next.
      */
     public int getColumn() {
         return column;
+    }
+
+    public String getPos() {
+        return "(" + getRow() + ", " + getColumn() + ")";
     }
 }
