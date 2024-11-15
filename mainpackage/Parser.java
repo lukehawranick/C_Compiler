@@ -221,7 +221,7 @@ public class Parser {
             String cmp = cmpOp();
             String rhs = expr();
             expect(Type.CLOSE_P);
-            output(new Atom(Atom.Opcode.TST, lhs, rhs, null, cmp, avoidBlock)); // skip if block and execute else block if condition != 1
+            output(new Atom(Atom.Opcode.TST, lhs, rhs, null, Atom.Opcode.compNumToOpposite(cmp), avoidBlock));
             block();
             startCapturingOutput();
             boolean elsePresent = _else();
@@ -229,7 +229,7 @@ public class Parser {
             String avoidElse = null;
             if (elsePresent) {
                 avoidElse = newLabel();
-                output(new Atom(Atom.Opcode.JMP, null, null, null, null, avoidElse)); // already executed if block. skip else block if condition == 1
+                output(new Atom(Atom.Opcode.JMP, null, null, null, null, avoidElse));
             }
             output(new Atom(Atom.Opcode.LBL, null, null, null, null, avoidBlock));
             output(elseAtoms);
