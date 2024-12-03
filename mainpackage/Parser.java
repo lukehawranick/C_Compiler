@@ -11,6 +11,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Stack;
 import java.util.function.Consumer;
+
 import mainpackage.Token.Type;
 
 /**
@@ -138,6 +139,21 @@ public class Parser {
         return token;
     }
 
+    private Token expect(int... terminals) {
+        if (accept(terminals))
+            return token;
+        else {
+            StringBuilder msg = new StringBuilder();
+            msg.append("Expected not present. Expected = {");
+            for (int i = 0; i < terminals.length; i++)
+                msg.append(Token.tokenTypeToString(terminals[i])).append(", ");
+            if (terminals.length > 0)
+                msg.delete(msg.length() - 2, msg.length());
+            msg.append("}");
+            throw new ParseException(msg.toString());
+        }
+    }
+
     /**
      * @brief For follow sets. Does what accept does but minus the consuming of the token and does not set 'token' field.
      * @param terminals The Token.Types to peek for.
@@ -160,7 +176,6 @@ public class Parser {
      */
     private void stmt() {
         if (accept(Type.INT, Type.FLOAT)) {
-            Token type = token; // TODO: How to handle types?
             String variable = expect(Type.IDENTIFIER).value;
             expect(Type.EQUAL);
             String value = expr();
@@ -192,52 +207,9 @@ public class Parser {
                 value = newValue;
             }
 
-            Comp comp = compares();
-            if (comp != null) {
-                String newValue = tempVar();
-                String trueLBL = newLabel();
-                String falseLBL = newLabel();
-                // Do comparison: TST a < b then trueLbl
-                output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, trueLBL));
-                // if comparison is not valid then newValue = 0
-                output(new Atom(Atom.Opcode.MOV, "0", null, newValue));
-                // then jmp falseLbl
-                output(new Atom(Atom.Opcode.JMP,null,null,null,null,falseLBL));
-                // trueLbl: [then carry on with remainder of code]
-                output(new Atom(Atom.Opcode.LBL,null,null,null,null,trueLBL));
-                // use mov token to get: newValue = 1
-                output(new Atom(Atom.Opcode.MOV,"1", null, newValue));
-                // return falseLbl:
-
-                output(new Atom(Atom.Opcode.LBL,null,null,null,null,falseLBL));
-                value = newValue;
-            }
-
-            comp = equals();
-            if (comp != null) {
-                String newValue = tempVar();
-                String trueLBL = newLabel();
-                String falseLBL = newLabel();
-                // Do comparison: TST a < b then trueLbl
-                output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, trueLBL));
-                // if comparison is not valid then newValue = 0
-                output(new Atom(Atom.Opcode.MOV, "0", null, newValue));
-                // then jmp falseLbl
-                output(new Atom(Atom.Opcode.JMP,null,null,null,null,falseLBL));
-                // trueLbl: [then carry on with remainder of code]
-                output(new Atom(Atom.Opcode.LBL,null,null,null,null,trueLBL));
-                // use mov token to get: newValue = 1
-                output(new Atom(Atom.Opcode.MOV,"1", null, newValue));
-                // return falseLbl:
-
-                output(new Atom(Atom.Opcode.LBL,null,null,null,null,falseLBL));
-                value = newValue;
-            }
-
             String assignsRHS = assigns();
-            if (assignsRHS != null) {
+            if (assignsRHS != null)
                 output(new Atom(Atom.Opcode.MOV, assignsRHS, null, value));
-            }
 
             expect(Type.SEMICOLON);
             stmt();
@@ -245,9 +217,11 @@ public class Parser {
             String avoidBlock = newLabel();
             
             expect(Type.OPEN_P);
-            String condition = expr();
+            String lhs = expr();
+            String cmp = cmpOp();
+            String rhs = expr();
             expect(Type.CLOSE_P);
-            output(new Atom(Atom.Opcode.TST, condition, "1", null, Atom.Opcode.compToNumber(Token.Type.NEQ), avoidBlock)); // skip if block and execute else block if condition != 1
+            output(new Atom(Atom.Opcode.TST, lhs, rhs, null, Atom.Opcode.compNumToOpposite(cmp), avoidBlock));
             block();
             startCapturingOutput();
             boolean elsePresent = _else();
@@ -255,7 +229,7 @@ public class Parser {
             String avoidElse = null;
             if (elsePresent) {
                 avoidElse = newLabel();
-                output(new Atom(Atom.Opcode.JMP, null, null, null, null, avoidElse)); // already executed if block. skip else block if condition == 1
+                output(new Atom(Atom.Opcode.JMP, null, null, null, null, avoidElse));
             }
             output(new Atom(Atom.Opcode.LBL, null, null, null, null, avoidBlock));
             output(elseAtoms);
@@ -269,16 +243,18 @@ public class Parser {
             expect(Type.OPEN_P);
             pre();
             startCapturingOutput();
-            String conditionValue = expr();
-            List<Atom> condition = stopCapturingOutput();
+            String lhs = expr();
+            String cmp = cmpOp();
+            String rhs = expr();
+            List<Atom> cmpPrep = stopCapturingOutput();
             expect(Type.SEMICOLON);
             startCapturingOutput();
             expr();
             List<Atom> increment = stopCapturingOutput();
             expect(Type.CLOSE_P);
             output(new Atom(Atom.Opcode.LBL, null, null, null, null, loop));
-            output(condition);
-            output(new Atom(Atom.Opcode.TST, conditionValue, "1", null, Atom.Opcode.compToNumber(Token.Type.NEQ), exit));
+            output(cmpPrep);
+            output(new Atom(Atom.Opcode.TST, lhs, rhs, null, Atom.Opcode.compNumToOpposite(cmp), exit));
             block();
             output(increment);
             output(new Atom(Atom.Opcode.JMP, null, null, null, null, loop));
@@ -290,9 +266,11 @@ public class Parser {
 
             output(new Atom(Atom.Opcode.LBL, null, null, null, null, loop));
             expect(Type.OPEN_P);
-            String condition = expr();
+            String lhs = expr();
+            String cmp = cmpOp();
+            String rhs = expr();
             expect(Type.CLOSE_P);
-            output(new Atom(Atom.Opcode.TST, condition, "1", null, Atom.Opcode.compToNumber(Token.Type.NEQ), exit));
+            output(new Atom(Atom.Opcode.TST, lhs, rhs, null, Atom.Opcode.compNumToOpposite(cmp), exit));
             block();
             output(new Atom(Atom.Opcode.JMP, null, null, null, null, loop));
             output(new Atom(Atom.Opcode.LBL, null, null, null, null, exit));
@@ -303,6 +281,12 @@ public class Parser {
             else
                 throw new ParseException();
         }
+    }
+
+    // Returns the cmp number of the operator parsed.
+    private String cmpOp() {
+        return Atom.Opcode.compToNumber(
+            expect(Token.Type.DOUBLE_EQUAL, Token.Type.LESS, Token.Type.MORE, Token.Type.LEQ, Token.Type.GEQ, Token.Type.NEQ));
     }
 
     /**
@@ -402,53 +386,9 @@ public class Parser {
             value = newVal;
         }
 
-        Comp comp = compares();
-        if (comp != null) {
-            String newValue = tempVar();
-            String trueLBL = newLabel();
-            String falseLBL = newLabel();
-            // Do comparison: TST a < b then trueLbl
-            output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, trueLBL));
-            // if comparison is not valid then newValue = 0
-            output(new Atom(Atom.Opcode.MOV, "0", null, newValue));
-            // then jmp falseLbl
-            output(new Atom(Atom.Opcode.JMP,null,null,null,null,falseLBL));
-            // trueLbl: [then carry on with remainder of code]
-            output(new Atom(Atom.Opcode.LBL,null,null,null,null,trueLBL));
-            // use mov token to get: newValue = 1
-            output(new Atom(Atom.Opcode.MOV,"1", null, newValue));
-            // return falseLbl:
-
-            output(new Atom(Atom.Opcode.LBL,null,null,null,null,falseLBL));
-            value = newValue;
-        }
-
-        comp = equals();
-        if (comp != null) {
-            String newValue = tempVar();
-            String trueLBL = newLabel();
-            String falseLBL = newLabel();
-            // Do comparison: TST a < b then trueLbl
-            output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, trueLBL));
-            // if comparison is not valid then newValue = 0
-            output(new Atom(Atom.Opcode.MOV, "0", null, newValue));
-            // then jmp falseLbl
-            output(new Atom(Atom.Opcode.JMP,null,null,null,null,falseLBL));
-            // trueLbl: [then carry on with remainder of code]
-            output(new Atom(Atom.Opcode.LBL,null,null,null,null,trueLBL));
-            // use mov token to get: newValue = 1
-            output(new Atom(Atom.Opcode.MOV,"1", null, newValue));
-            // return falseLbl:
-
-            output(new Atom(Atom.Opcode.LBL,null,null,null,null,falseLBL));
-            value = newValue;
-        }
-
         String assignRHS = assigns();
-        if (assignRHS != null) {
-            // TODO: Ensure 'value' is an identifier somehow? Where should this be done? In grammar somehow? Here somehow?
+        if (assignRHS != null)
             output(new Atom(Atom.Opcode.MOV, assignRHS, null, value));
-        }
 
         return value;
     }
@@ -458,14 +398,16 @@ public class Parser {
      * @return The value that contains the result of this assignment.
      */
     private String assigns() {
-        if (accept(Type.EQUAL)) {
-            String value = expr();
-            String dest = token.value;
-            output(new Atom(Atom.Opcode.MOV, value, null, dest));
-            return value;
-        }
+        if (!accept(Type.EQUAL))
+            return null;
 
-        return null;
+        String value = assign();
+
+        String assignRHS = assigns();
+        if (assignRHS != null)
+            output(new Atom(Atom.Opcode.MOV, assignRHS, null, value));
+            
+        return value;
     }
 
     /**
@@ -475,165 +417,6 @@ public class Parser {
      * @throws ParseException if the input is invalid.
      */
     private String assign() {
-        String value;
-        if (accept(Type.IDENTIFIER)) {
-            value = token.value;
-            Arith arith = factors();
-            if (arith != null) {
-                String newValue = tempVar();
-                output(new Atom(arith.operator, value, arith.rhs, newValue));
-                value = newValue;
-            }
-    
-            arith = terms();
-            if (arith != null) {
-                String newValue = tempVar();
-                output(new Atom(arith.operator, value, arith.rhs, newValue));
-                value = newValue;
-            }
-    
-            Comp comp = compares();
-            if (comp != null) {
-                String newValue = tempVar();
-                output(new Atom(Atom.Opcode.TST, value, comp.rhs, newValue)); 
-                value = newValue;
-            }
-    
-            return value;
-        } else {
-            throw new ParseException("Syntax error: expected identifier");
-        }
-    }
-
-    /**
-     * @brief Parses am equality comparison operation.
-     * @return A comp object with comparison details, if found
-     */
-    private Comp equals() {
-        if (!accept(Type.DOUBLE_EQUAL, Type.NEQ))
-            return null;
-
-        String cmpCode = Atom.Opcode.compToNumber(token);
-        String value = equal();
-
-        Comp comp = equals();
-        if (comp != null) {
-            String newValue = tempVar();
-            String trueLBL = newLabel();
-            String falseLBL = newLabel();
-            // Do comparison: TST a < b then trueLbl
-            output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, trueLBL));
-            // if comparison is not valid then newValue = 0
-            output(new Atom(Atom.Opcode.MOV, "0", null, newValue));
-            // then jmp falseLbl
-            output(new Atom(Atom.Opcode.JMP,null,null,null,null,falseLBL));
-            // trueLbl: [then carry on with remainder of code]
-            output(new Atom(Atom.Opcode.LBL,null,null,null,null,trueLBL));
-            // use mov token to get: newValue = 1
-            output(new Atom(Atom.Opcode.MOV,"1", null, newValue));
-            // return falseLbl:
-
-            output(new Atom(Atom.Opcode.LBL,null,null,null,null,falseLBL));
-            value = newValue;
-        }
-
-        return new Comp(cmpCode, value);
-    }
-
-    /**
-     * @brief Parses an equality comparison operation.
-     * @return The corresponding temporary variable name.
-     * @throws ParseException if the input is invalid.
-     */
-    private String equal() {
-        String value;
-        if (accept(Type.OPEN_P)) {
-            value = expr();
-            expect(Type.CLOSE_P);
-        } else if (accept(Type.IDENTIFIER, Type.INT_LITERAL, Type.FLOAT_LITERAL))
-            value = token.value;
-        else
-            throw new ParseException();
-
-        Arith arith = factors();
-        if (arith != null) {
-            String newValue = tempVar();
-            output(new Atom(arith.operator, value, arith.rhs, newValue));
-            value = newValue;
-        }
-
-        arith = terms();
-        if (arith != null) {
-            String newValue = tempVar();
-            output(new Atom(arith.operator, value, arith.rhs, newValue));
-            value = newValue;
-        }
-
-        Comp comp = compares();
-        if (comp != null) {
-            String newValue = tempVar();
-                String trueLBL = newLabel();
-                String falseLBL = newLabel();
-                // Do comparison: TST a < b then trueLbl
-                output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, trueLBL));
-                // if comparison is not valid then newValue = 0
-                output(new Atom(Atom.Opcode.MOV, "0", null, newValue));
-                // then jmp falseLbl
-                output(new Atom(Atom.Opcode.JMP,null,null,null,null,falseLBL));
-                // trueLbl: [then carry on with remainder of code]
-                output(new Atom(Atom.Opcode.LBL,null,null,null,null,trueLBL));
-                // use mov token to get: newValue = 1
-                output(new Atom(Atom.Opcode.MOV,"1", null, newValue));
-                // return falseLbl:
-
-                output(new Atom(Atom.Opcode.LBL,null,null,null,null,falseLBL));
-                value = newValue;
-        }
-
-        return value;
-    }
-
-    /**
-     * @brief Parses a comparison operation.
-     * @return A comp object with comparison details, if found
-     */
-    private Comp compares() {
-        if (!accept(Type.LESS, Type.MORE, Type.LEQ, Type.GEQ))
-            return null;
-        
-        String cmpCode = Atom.Opcode.compToNumber(token);
-        String value = compare();
-
-        Comp comp = compares();
-        if (comp != null) {
-            String newValue = tempVar();
-                String trueLBL = newLabel();
-                String falseLBL = newLabel();
-                // Do comparison: TST a < b then trueLbl
-                output(new Atom(Atom.Opcode.TST, value, comp.rhs, null, comp.cmp, trueLBL));
-                // if comparison is not valid then newValue = 0
-                output(new Atom(Atom.Opcode.MOV, "0", null, newValue));
-                // then jmp falseLbl
-                output(new Atom(Atom.Opcode.JMP,null,null,null,null,falseLBL));
-                // trueLbl: [then carry on with remainder of code]
-                output(new Atom(Atom.Opcode.LBL,null,null,null,null,trueLBL));
-                // use mov token to get: newValue = 1
-                output(new Atom(Atom.Opcode.MOV,"1", null, newValue));
-                // return falseLbl:
-
-                output(new Atom(Atom.Opcode.LBL,null,null,null,null,falseLBL));
-                value = newValue;
-        }
-
-        return new Comp(cmpCode, value);
-    }
-
-    /**
-     * @brief Parses a comparison operation.
-     * @return The corresponding temporary variable name.
-     * @throws ParseException if the input is invalid.
-     */
-    private String compare() {
         String value;
         if (accept(Type.OPEN_P)) {
             value = expr();

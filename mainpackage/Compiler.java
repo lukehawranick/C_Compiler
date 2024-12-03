@@ -25,6 +25,24 @@ public class Compiler {
         String tokenDest = null; // !null: Scanner -> Parser, null: Scanner -> File
         String atomDest = null; // TODO !null: Parser -> Code Generator, null: Parser -> File
 
+        // try {
+        //     SourceStream ss = SourceStream.fromString(
+        //         "in\nto\n"
+        //         );
+        //         System.out.println(ss.getPos());
+        //         System.out.println(ss.next());
+        //         System.out.println(ss.getPos());
+        //         System.out.println(ss.next());
+        //         System.out.println(ss.getPos());
+        //         System.out.println(ss.next());
+        //         System.out.println(ss.getPos());
+        //         System.out.println(ss.next());
+        //         System.out.println(ss.getPos());
+        // } catch (IOException e) {
+        //     throw new RuntimeException();
+        // }
+        // if (true) return;
+
         int i = 0;
         while (i < args.length) {
             String option = args[i++];
@@ -57,8 +75,11 @@ public class Compiler {
             e.printStackTrace();
             System.out.printf("Source file %s not found.\n", sourceFile);
             return;
+        } catch(Scanner.ScannerException e) {
+            System.out.printf("%s\n\tNext Scanner Character: %s\nCompilation failed.", e.getMessage(), e.scannerPos);
+            return;
         } catch (Parser.ParseException e) {
-            System.out.printf("%s\n\tScanner Pos (c, r): %s\n\tRecently Consumed Token: %s\n\tNext Token: %s\n", e.msg, e.scannerPos, e.recentlyConsumedToken.toString(), e.nextToken.toString());
+            System.out.printf("Compilation failed. %s\n\tNext Scanner Character: %s\n\tRecently Consumed Token: %s\n\tNext Token: %s\n", e.msg, e.scannerPos, e.recentlyConsumedToken.toString(), e.nextToken.toString());
             return;
         }
         

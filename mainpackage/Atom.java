@@ -137,5 +137,9 @@ public class Atom {
                 default: throw new IllegalArgumentException();
             }
         }
+
+        public static String compNumToOpposite(String compNum) {
+            return Integer.toString(7 - Integer.parseInt(compNum));
+        }
     }
 }
