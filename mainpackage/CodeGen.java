@@ -43,53 +43,113 @@ public class CodeGen {
      * @throws CodeGenException If Invalid Input
      */
     public void generate() {
-        int instruction;
+        StringBuilder instruction = new StringBuilder();
         for (Atom atom : input.atomList) {
-            instruction = 0b0;
 
             // Assign Opcode Value
             switch (atom.opcode) {
                 case ADD:
-                    instruction += 0b00010000000000000000000000000000;
+                    //adding opcode to instruction
+                    instruction.append("0001");
+
+                    //adding comp to instruction
+                    instruction.append("0000");
+
+                    //adding register to instruction
+                    instruction.append(Integer.parseInt(atom.getOperand(0)));
+
+                    //adding memory location to instruction
+                    instruction.append(Integer.parseInt(atom.getOperand(1)));
 
                 case SUB:
-                    instruction += 0b00100000000000000000000000000000;
+                    //adding opcode to instruction
+                    instruction.append("0010");
+
+                    //adding comp to instruction
+                    instruction.append("0000");
+
+                    //adding register to instruction
+                    instruction.append(Integer.parseInt(atom.getOperand(0)));
+
+                    //adding memory location to instruction
+                    instruction.append(Integer.parseInt(atom.getOperand(1)));
 
                 case MUL:
-                    instruction += 0b00110000000000000000000000000000;
+                    //adding opcode to instruction
+                    instruction.append("0011");
+
+                    //adding comp to instruction
+                    instruction.append("0000");
+
+                    //adding register to instruction
+                    instruction.append(Integer.parseInt(atom.getOperand(0)));
+
+                    //adding memory location to instruction
+                    instruction.append(Integer.parseInt(atom.getOperand(1)));
 
                 case DIV:
-                    instruction += 0b01000000000000000000000000000000;
+                    //adding opcode to instruction
+                    instruction.append("0100");
+
+                    //adding comp to instruction
+                    instruction.append("0000");
+
+                    //adding register to instruction
+                    instruction.append(Integer.parseInt(atom.getOperand(0)));
+
+                    //adding memory location to instruction
+                    instruction.append(Integer.parseInt(atom.getOperand(1)));
 
                 case JMP:
-                    instruction += 0b01010000000000000000000000000000;
+                    //adding opcode to instruction
+                    instruction.append("0101");
 
-                case TST:
-                    instruction += 0b01100000000000000000000000000000; // Corresponds With CMP
+                    //adding comp to instruction
+                    instruction.append("0000");
 
-                    // Assign CMP Value
+                    //adding register to instruction
+                    instruction.append("0000");
+
+                    //adding memory location to instruction
+                        //this refers to where we jump to, which is a label
+                        //I don't know how we are handling that for now
+
+                case TST: // Corresponds With CMP
+                    //adding opcode to instruction
+                    instruction.append("0110");
+
+                    //adding comp to instruction
                     switch(atom.getOperand(3)) {
+                        case "0":
+                            instruction.append("0000");
+
                         case "1":
-                            instruction += 0b00000001000000000000000000000000;
+                            instruction.append("0001");
 
                         case "2":
-                            instruction += 0b00000010000000000000000000000000;
+                            instruction.append("0010");
 
                         case "3":
-                            instruction += 0b00000011000000000000000000000000;
+                            instruction.append("0011");
 
                         case "4":
-                            instruction += 0b00000100000000000000000000000000;
+                            instruction.append("0100");;
 
                         case "5":
-                            instruction += 0b00000101000000000000000000000000;
+                            instruction.append("0101");
 
                         case "6":
-                            instruction += 0b00000110000000000000000000000000;
+                            instruction.append("0110");
 
                         default:
                             // Insert Exception Here
                     }
+
+                    //adding register to instruction
+                    instruction.append(Integer.parseInt(atom.getOperand(1)));
+
+                    //adding memory location to instruction
+                    instruction.append(Integer.parseInt(atom.getOperand(2)));
 
                 case NEG:
 
@@ -106,10 +166,6 @@ public class CodeGen {
                 default:
                     // Insert Exception
             }
-
-            // Assign Register Value
-
-            // Assign Memory Value
         }
     }
 
