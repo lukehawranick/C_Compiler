@@ -30,9 +30,19 @@ public class CodeGen {
     private Stack<List<Integer>> capturedOutput = new Stack<List<Integer>>();
 
     /**
+     * @brief Constructs Code Generator Object
+     * @param input The Parser Object Providing Atoms
+     * @param output The Consumer Object to Accept Outputs
+     */
+    public CodeGen(Parser input, Consumer<Integer> output) {
+        this.input = input;
+        this.output = output;
+    }
+
+        /**
      * @brief Serves as our first pass, filling in the label table
      */
-    public void GenerateLabelTable() {
+    public void generateLabelTable() {
         //initializing label table
         HashMap<String, Integer> labelTable = new HashMap<String, Integer>();
 
@@ -55,22 +65,14 @@ public class CodeGen {
 
                     //increment program counter by 4 bytes (size of instructions)
                     pc += 4;
+                    break;
 
                 //otherwise, only increment program counter
                 default:
                     pc += 4;
+                    break;
             }
         }
-    }
-
-    /**
-     * @brief Constructs Code Generator Object
-     * @param input The Parser Object Providing Atoms
-     * @param output The Consumer Object to Accept Outputs
-     */
-    public CodeGen(Parser input, Consumer<Integer> output) {
-        this.input = input;
-        this.output = output;
     }
     
     /**
