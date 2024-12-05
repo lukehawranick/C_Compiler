@@ -2,7 +2,7 @@ package mainpackage;
 /**
  * @file Parser.java
  * @brief An implementation of Code Generator: Atom Input -> Binary Output
- * @authors Mallory Anderson
+ * @authors Mallory Anderson, Koren Spell
  * @reviewers 
  * @date 12/04/2024
  */
@@ -43,113 +43,254 @@ public class CodeGen {
      * @throws CodeGenException If Invalid Input
      */
     public void generate() {
-        StringBuilder instruction = new StringBuilder();
+        StringBuilder loadInstruction = new StringBuilder();
+        StringBuilder mainInstruction = new StringBuilder();
+        StringBuilder storeInstruction = new StringBuilder();
         for (Atom atom : input.atomList) {
 
-            // Assign Opcode Value
             switch (atom.opcode) {
                 case ADD:
-                    //adding opcode to instruction
-                    instruction.append("0001");
+                    /*
+                    * Handling the initial Load Instruction
+                    */
 
-                    //adding comp to instruction
-                    instruction.append("0000");
+                    //adding opcode
+                    loadInstruction.append("0111");
 
-                    //adding register to instruction
-                    instruction.append(Integer.parseInt(atom.getOperand(0)));
+                    //adding comp
+                    loadInstruction.append("0000");
 
-                    //adding memory location to instruction
-                    instruction.append(Integer.parseInt(atom.getOperand(1)));
+                    //adding register
+
+
+                    //adding memory location
+
+                    /*
+                    * Handling the main Add instruction 
+                    */
+
+                    //adding opcode
+                    mainInstruction.append("0001");
+
+                    //adding comp
+                    mainInstruction.append("0000");
+
+                    //adding register
+                    mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
+
+                    //adding memory location
+                    mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
+
+                    /*
+                    * Handling the final Store instruction
+                    */
+
+                    //adding opcode
+                    storeInstruction.append("1000");
+
+                    //adding comp
+                    storeInstruction.append("0000");
+
+                    //adding register
+
+                    //adding memory location
 
                 case SUB:
-                    //adding opcode to instruction
-                    instruction.append("0010");
+                    /*
+                    * Handling the initial Load Instruction
+                    */
 
-                    //adding comp to instruction
-                    instruction.append("0000");
+                    //adding opcode
+                    loadInstruction.append("0111");
 
-                    //adding register to instruction
-                    instruction.append(Integer.parseInt(atom.getOperand(0)));
+                    //adding comp
+                    loadInstruction.append("0000");
 
-                    //adding memory location to instruction
-                    instruction.append(Integer.parseInt(atom.getOperand(1)));
+                    //adding register
+
+
+                    //adding memory location
+
+                    /*
+                    * Handling the main Sub instruction 
+                    */
+
+                    //adding opcode
+                    mainInstruction.append("0010");
+
+                    //adding comp
+                    mainInstruction.append("0000");
+
+                    //adding register
+                    mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
+
+                    //adding memory location
+                    mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
+
+                    /*
+                    * Handling the final Store instruction
+                    */
+
+                    //adding opcode
+                    storeInstruction.append("1000");
+
+                    //adding comp
+                    storeInstruction.append("0000");
+
+                    //adding register
+
+                    //adding memory location
 
                 case MUL:
-                    //adding opcode to instruction
-                    instruction.append("0011");
+                    /*
+                    * Handling the initial Load Instruction
+                    */
 
-                    //adding comp to instruction
-                    instruction.append("0000");
+                    //adding opcode
+                    loadInstruction.append("0111");
 
-                    //adding register to instruction
-                    instruction.append(Integer.parseInt(atom.getOperand(0)));
+                    //adding comp
+                    loadInstruction.append("0000");
 
-                    //adding memory location to instruction
-                    instruction.append(Integer.parseInt(atom.getOperand(1)));
+                    //adding register
+
+
+                    //adding memory location
+
+                    /*
+                    * Handling the main Mul instruction 
+                    */
+
+                    //adding opcode
+                    mainInstruction.append("0011");
+
+                    //adding comp
+                    mainInstruction.append("0000");
+
+                    //adding register
+                    mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
+
+                    //adding memory location
+                    mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
+
+                    /*
+                    * Handling the final Store instruction
+                    */
+
+                    //adding opcode
+                    storeInstruction.append("1000");
+
+                    //adding comp
+                    storeInstruction.append("0000");
+
+                    //adding register
+
+                    //adding memory location
 
                 case DIV:
-                    //adding opcode to instruction
-                    instruction.append("0100");
+                    /*
+                    * Handling the initial Load Instruction
+                    */
 
-                    //adding comp to instruction
-                    instruction.append("0000");
+                    //adding opcode
+                    loadInstruction.append("0111");
 
-                    //adding register to instruction
-                    instruction.append(Integer.parseInt(atom.getOperand(0)));
+                    //adding comp
+                    loadInstruction.append("0000");
 
-                    //adding memory location to instruction
-                    instruction.append(Integer.parseInt(atom.getOperand(1)));
+                    //adding register
+
+
+                    //adding memory location
+
+                    /*
+                    * Handling the main Add instruction 
+                    */
+
+                    //adding opcode
+                    mainInstruction.append("0100");
+
+                    //adding comp
+                    mainInstruction.append("0000");
+
+                    //adding register
+                    mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
+
+                    //adding memory location
+                    mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
+
+                    /*
+                    * Handling the final Store instruction
+                    */
+
+                    //adding opcode
+                    storeInstruction.append("1000");
+
+                    //adding comp
+                    storeInstruction.append("0000");
+
+                    //adding register
+
+                    //adding memory location
 
                 case JMP:
-                    //adding opcode to instruction
-                    instruction.append("0101");
+                    //adding opcode
+                    mainInstruction.append("0101");
 
-                    //adding comp to instruction
-                    instruction.append("0000");
+                    //adding comp
+                    mainInstruction.append("0000");
 
-                    //adding register to instruction
-                    instruction.append("0000");
+                    //adding register
+                    mainInstruction.append("0000");
 
-                    //adding memory location to instruction
+                    //adding memory location
                         //this refers to where we jump to, which is a label
                         //I don't know how we are handling that for now
 
-                case TST: // Corresponds With CMP
-                    //adding opcode to instruction
-                    instruction.append("0110");
+                case TST:
+                    /*
+                    * Handles initial Load instruction(s)
+                    */
 
-                    //adding comp to instruction
+                    /*
+                    * Handling main Tst instruction
+                    */
+
+                    //adding opcode
+                    mainInstruction.append("0110");
+
+                    //adding comp
                     switch(atom.getOperand(3)) {
                         case "0":
-                            instruction.append("0000");
+                            mainInstruction.append("0000");
 
                         case "1":
-                            instruction.append("0001");
+                            mainInstruction.append("0001");
 
                         case "2":
-                            instruction.append("0010");
+                            mainInstruction.append("0010");
 
                         case "3":
-                            instruction.append("0011");
+                            mainInstruction.append("0011");
 
                         case "4":
-                            instruction.append("0100");;
+                            mainInstruction.append("0100");;
 
                         case "5":
-                            instruction.append("0101");
+                            mainInstruction.append("0101");
 
                         case "6":
-                            instruction.append("0110");
+                            mainInstruction.append("0110");
 
                         default:
                             // Insert Exception Here
                     }
 
-                    //adding register to instruction
-                    instruction.append(Integer.parseInt(atom.getOperand(1)));
+                    //adding register
+                    mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
 
-                    //adding memory location to instruction
-                    instruction.append(Integer.parseInt(atom.getOperand(2)));
+                    //adding memory location
+                    mainInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                 case NEG:
 
@@ -160,7 +301,8 @@ public class CodeGen {
                 //case LOD:
 
                 //case STO:  Which case above do these three correspond with?
-
+                                //it isn't that they correspond, these are instructions that
+                                //we need to encode that aren't part of the atoms
                 //case HLT:
 
                 default:
