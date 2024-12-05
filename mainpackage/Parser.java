@@ -23,6 +23,7 @@ public class Parser {
 
     // Consumer to handle atoms
     private final Consumer<Atom> output;
+    final LinkedList<Atom> atomList;
     
     // The most recently consumed token.
     private Token token;
@@ -44,6 +45,7 @@ public class Parser {
     public Parser(Scanner input, Consumer<Atom> output) {
         this.input = input;
         this.output = output;
+        atomList = new LinkedList<>(List.of());
         nextTempVarNum = 0;
         nextLabelNum = 0;
     }
@@ -80,8 +82,10 @@ public class Parser {
     private void output(Atom atom) {
         if (!capturedOutput.isEmpty())
             capturedOutput.peek().add(atom);
-        else
+        else {
             output.accept(atom);
+            atomList.add(atom);
+        }
     }
 
     /**
