@@ -8,6 +8,7 @@ package mainpackage;
  */
 
 import java.util.LinkedList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Stack;
 import java.util.function.Consumer;
@@ -27,6 +28,40 @@ public class CodeGen {
 
     // Stack Holding Captured Output for Deferred Handling.
     private Stack<List<Integer>> capturedOutput = new Stack<List<Integer>>();
+
+    /**
+     * @brief Serves as our first pass, filling in the label table
+     */
+    public void GenerateLabelTable() {
+        //initializing label table
+        HashMap<String, Integer> labelTable = new HashMap<String, Integer>();
+
+        //program counter
+        int pc = 0;
+
+        //label counter
+        int label = 1;
+        
+        //iterate through generated atoms
+        for (Atom atom : input.atomList) {
+            switch (atom.opcode) {
+                //if label, add to table and increment counting variables
+                case LBL:
+                    //add entry to table
+                    labelTable.put("L" + label + "", pc);
+
+                    //increment label counter for naming
+                    label++;
+
+                    //increment program counter by 4 bytes (size of instructions)
+                    pc += 4;
+
+                //otherwise, only increment program counter
+                default:
+                    pc += 4;
+            }
+        }
+    }
 
     /**
      * @brief Constructs Code Generator Object
