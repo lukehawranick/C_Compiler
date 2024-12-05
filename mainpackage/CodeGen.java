@@ -2,7 +2,7 @@ package mainpackage;
 /**
  * @file Parser.java
  * @brief An implementation of Code Generator: Atom Input -> Binary Output
- * @authors Mallory Anderson, Koren Spell
+ * @authors Mallory Anderson, Koren Spell, Jeremy Appiah
  * @reviewers 
  * @date 12/04/2024
  */
@@ -381,3 +381,94 @@ public class CodeGen {
             output(i);
     }
 }
+
+// private void secondPass() {
+//     currentAddress = 0;
+
+//     for (Atom atom : input.atomList) {
+//         this.atom = atom;
+//         StringBuilder instruction = new StringBuilder();
+
+//         switch (atom.opcode) {
+//             case ADD:
+//             case SUB:
+//             case MUL:
+//             case DIV:
+//                 generateArithmeticInstruction(atom, instruction);
+//                 break;
+
+//             case JMP:
+//                 generateJumpInstruction(atom, instruction);
+//                 break;
+
+//             case TST:
+//                 generateTestInstruction(atom, instruction);
+//                 break;
+
+//             case NEG:
+//                 generateNegInstruction(instruction);
+//                 break;
+
+//             default:
+//                 throw new IllegalArgumentException("Unknown opcode: " + atom.opcode);
+//         }
+
+//         // Save and emit binary instruction
+//         if (instruction.length() > 0) {
+//             binaryInstructions.add(instruction.toString());
+//             output(Integer.parseInt(instruction.toString(), 2));
+//         }
+
+//         currentAddress++;
+//     }
+// }
+
+// private void generateArithmeticInstruction(Atom atom, StringBuilder instruction) {
+//     // Example for ADD, similar logic for SUB, MUL, DIV
+//     switch (atom.opcode) {
+//         case ADD:
+//             instruction.append("0001"); // Opcode for ADD
+//             break;
+//         case SUB:
+//             instruction.append("0010"); // Opcode for SUB
+//             break;
+//         case MUL:
+//             instruction.append("0011"); // Opcode for MUL
+//             break;
+//         case DIV:
+//             instruction.append("0100"); // Opcode for DIV
+//             break;
+//     }
+
+//     instruction.append("0000"); // Comp field (placeholder)
+//     instruction.append(atom.getOperand(0)); // Register
+//     instruction.append(atom.getOperand(1)); // Memory location
+// }
+
+// private void generateJumpInstruction(Atom atom, StringBuilder instruction) {
+//     instruction.append("0101"); // Opcode for JMP
+//     instruction.append("0000"); // Comp field (placeholder)
+//     instruction.append("0000"); // Register (not used)
+
+//     String label = atom.getOperand(0);
+//     Integer targetAddress = labelTable.get(label);
+//     if (targetAddress == null) {
+//         throw new IllegalArgumentException("Undefined label: " + label);
+//     }
+
+//     instruction.append(String.format("%04d", targetAddress)); // Label address
+// }
+
+// private void generateTestInstruction(Atom atom, StringBuilder instruction) {
+//     instruction.append("0110"); // Opcode for TST
+//     instruction.append(atom.getOperand(3)); // Comparison code
+//     instruction.append(atom.getOperand(1)); // Register
+//     instruction.append(atom.getOperand(2)); // Memory location
+// }
+
+// private void generateNegInstruction(StringBuilder instruction) {
+//     instruction.append("1001"); // Opcode for NEG
+//     instruction.append("0000"); // Comp field (placeholder)
+//     instruction.append("0000"); // Register
+//     instruction.append("0000"); // Memory location (not used)
+// }
