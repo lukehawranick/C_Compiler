@@ -10,6 +10,8 @@ package mainpackage;
 import java.util.LinkedList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Stack;
 import java.util.function.Consumer;
 
@@ -25,7 +27,10 @@ public class CodeGen {
     // that can utilize more than one register anyways.
     private static final int REG = 0;
 
+    // State of the last call to generate()
     private int codeSegmentBeginning = -1;
+    // State of the last call to generate()
+    private Symbols symbols = null;
 
     // Parser to Read Atoms From
     private final List<Atom> input;
@@ -97,6 +102,7 @@ public class CodeGen {
     public void generate() {
         //getting the Label Table
         Symbols symbols = generateTables();
+        this.symbols = symbols;
         // Output constants and variables
         output(symbols.getBeginningOfMemory());
         codeSegmentBeginning = symbols.getMemConsumed();
@@ -186,6 +192,12 @@ public class CodeGen {
         return codeSegmentBeginning;
     }
 
+    public Symbols getSymbols() {
+        if (symbols == null)
+            throw new IllegalStateException("Cannot get the symbols before generating code.");
+        return symbols;
+    }
+
     /**
      * @brief Diverts Output to List to be Handled Later
      */
@@ -217,7 +229,7 @@ public class CodeGen {
             output(instruction);
     }
 
-    private static class Symbols {
+    public static class Symbols {
         //initializing label table
         public final HashMap<String, Integer> labelTable = new HashMap<>();
         // Maps constant integer values to their locations in memory
@@ -257,6 +269,24 @@ public class CodeGen {
             // we dont have to initialize the variables because that will be
             // handled in runtime
             return toReturn;
+        }
+
+        public String getSymbolOf(int address) {
+            Optional<Entry<String, Integer>> o =
+                variableTable.entrySet().stream().filter((e) -> e.getValue() == address).findFirst();
+            if (o.isPresent())
+                return "VARIABLE<" + o.get().getKey() + ">";
+            
+            Optional<Entry<Float, Integer>> o1 =
+                constantTable.entrySet().stream().filter((e) -> e.getValue() == address).findFirst();
+            if (o1.isPresent())
+                return "CONSTANT";
+
+            o = labelTable.entrySet().stream().filter((e) -> e.getValue() == address).findFirst();
+            if (o.isPresent())
+                return "LABEL<" + o.get().getKey() + ">";
+
+            throw new RuntimeException();
         }
     }
 }

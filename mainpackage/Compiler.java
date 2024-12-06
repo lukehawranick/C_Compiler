@@ -75,7 +75,8 @@ public class Compiler {
                 CodeGen gen = new CodeGen(atoms, code::add);
                 gen.generate();
                 for (int j = 0; j < gen.getCodeSegBeginning(); j++) {
-                    System.out.printf("%d: %s\n", pc, Float.intBitsToFloat(code.get(j)));
+                    CodeGen.Symbols sym = gen.getSymbols();
+                    System.out.printf("%d: %s (%s)\n", pc, Float.intBitsToFloat(code.get(j)), sym.getSymbolOf(pc));
                     pc += 4;
                 }
                 for (int j = gen.getCodeSegBeginning(); j < code.size(); j++) {
