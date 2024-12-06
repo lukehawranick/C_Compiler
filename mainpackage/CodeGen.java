@@ -65,20 +65,22 @@ public class CodeGen {
                 switch (o.type) {
                     case Operand.CONSTANT:
                         if (symbols.constantTable.putIfAbsent(o.getConstant(), memoryCounter) == null)
-                            memoryCounter++;
+                            memoryCounter += 4;
+                        pc += 4;
                         break;
                     case Operand.VARIABLE:
                         if (symbols.variableTable.putIfAbsent(o.getSymbol(), memoryCounter) == null)
-                            memoryCounter++;
+                            memoryCounter += 4;
+                        pc += 4;
                         break;
                     case Operand.LABEL_DEFINITION:
                         symbols.labelTable.putIfAbsent(o.getSymbol(), pc);
                         break;
                     default:
+                        pc += 4;
                         break;
                 }
             }
-            pc += 4;
         }
 
         int firstInstructionAddress = symbols.getMemConsumed();
@@ -251,7 +253,7 @@ public class CodeGen {
         public int[] getBeginningOfMemory() {
             int[] toReturn = new int[getMemConsumed()];
             for (HashMap.Entry<Float, Integer> e : constantTable.entrySet())
-                toReturn[e.getValue()] = Float.floatToIntBits(e.getKey());
+                toReturn[e.getValue() / 4] = Float.floatToIntBits(e.getKey());
             // we dont have to initialize the variables because that will be
             // handled in runtime
             return toReturn;
