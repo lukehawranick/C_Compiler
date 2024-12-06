@@ -54,24 +54,9 @@ public class CodeGen {
         
         //iterate through generated atoms
         for (Atom atom : input.atomList) {
-            switch (atom.opcode) {
-                //if label, add to table and increment counting variables
-                case LBL:
-                    //add entry to table
-                    labelTable.put(label, pc);
-
-                    //increment label counter
-                    label++;
-
-                    //increment program counter by 4 bytes (size of instructions)
-                    pc += 4;
-                    break;
-
-                //otherwise, only increment program counter
-                default:
-                    pc += 4;
-                    break;
-            }
+            if (atom.opcode == Atom.Opcode.LBL)
+                labelTable.put(label++, pc);
+            pc += 4;
         }
 
         return labelTable;
@@ -82,6 +67,8 @@ public class CodeGen {
      * @throws CodeGenException If Invalid Input
      */
     public void generate() {
+        // Maps variables to addresses (variables start at address 200)
+        HashMap<String, Integer> variableMap = new HashMap<>();
 
         //getting the Label Table
         HashMap<Integer, Integer> labelTable = generateLabelTable();
@@ -99,7 +86,6 @@ public class CodeGen {
 
         //iterating through the atom list
         for (Atom atom : input.atomList) {
-
             switch (atom.opcode) {
                 case ADD:
                     /*
