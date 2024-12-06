@@ -1,5 +1,7 @@
 package mainpackage;
 
+import mainpackage.CodeGen.Symbols;
+
 public class Instruction {
     private static final int OPCODE_MASK =  0xF0000000;
     private static final int MODE_MASK =    0x08000000;
@@ -107,14 +109,14 @@ public class Instruction {
         return sb.toString();
     }
     
-    public String toStringPrettyPlus() {
+    public String toStringPrettyPlus(Symbols symbols) {
         StringBuilder sb = new StringBuilder();
         sb.append(toStringPretty()).append(' ');
         sb.append(Opcode.toString(getOpcode())).append(' ');
         sb.append(getMode()).append(' ');
         sb.append(Cmp.toString(getCmp())).append(' ');
         sb.append("R" + getR() + ' ');
-        sb.append("A" + getA());
+        sb.append("A").append(getA()).append('[').append(symbols.getSymbolOf(getA())).append(']');
 
         return sb.toString();
     }

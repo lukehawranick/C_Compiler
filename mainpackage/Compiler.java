@@ -74,14 +74,14 @@ public class Compiler {
                 List<Integer> code = new ArrayList<>();
                 CodeGen gen = new CodeGen(atoms, code::add);
                 gen.generate();
+                CodeGen.Symbols sym = gen.getSymbols();
                 for (int j = 0; j < gen.getCodeSegBeginning(); j++) {
-                    CodeGen.Symbols sym = gen.getSymbols();
                     System.out.printf("%d: %s (%s)\n", pc, Float.intBitsToFloat(code.get(j)), sym.getSymbolOf(pc));
                     pc += 4;
                 }
                 for (int j = gen.getCodeSegBeginning(); j < code.size(); j++) {
                     System.out.printf("%d: %s\n", pc,
-                        new Instruction(code.get(j)).toStringPrettyPlus());
+                        new Instruction(code.get(j)).toStringPrettyPlus(sym));
                     pc += 4;
                 }
             } else {
