@@ -45,7 +45,7 @@ public class Parser {
     public Parser(Scanner input, Consumer<Atom> output) {
         this.input = input;
         this.output = output;
-        atomList = new LinkedList<>(List.of());
+        atomList = new LinkedList<>();
         nextTempVarNum = 0;
         nextLabelNum = 0;
     }
