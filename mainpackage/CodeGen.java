@@ -42,7 +42,7 @@ public class CodeGen {
         /**
      * @brief Serves as our first pass, filling in the label table
      */
-    public void generateLabelTable() {
+    public HashMap<String, Integer> generateLabelTable() {
         //initializing label table
         HashMap<String, Integer> labelTable = new HashMap<String, Integer>();
 
@@ -73,6 +73,8 @@ public class CodeGen {
                     break;
             }
         }
+
+        return labelTable;
     }
     
     /**
@@ -84,6 +86,9 @@ public class CodeGen {
         StringBuilder mainInstruction = new StringBuilder();
         StringBuilder storeInstruction = new StringBuilder();
         for (Atom atom : input.atomList) {
+
+            //getting Label Table
+            HashMap<String, Integer> LableTable = generateLabelTable();
 
             switch (atom.opcode) {
                 case ADD:
