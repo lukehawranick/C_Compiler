@@ -2,7 +2,7 @@ package mainpackage;
 /**
  * @file Parser.java
  * @brief An implementation of Code Generator: Atom Input -> Binary Output
- * @authors Mallory Anderson, Koren Spell, Jeremy Appiah
+ * @authors Mallory Anderson, Koren Spell, Jeremy Appiah, Sara Ackerman
  * @reviewers 
  * @date 12/04/2024
  */
@@ -85,6 +85,7 @@ public class CodeGen {
         StringBuilder loadInstruction = new StringBuilder();
         StringBuilder mainInstruction = new StringBuilder();
         StringBuilder storeInstruction = new StringBuilder();
+        StringBuilder jumpInstruction = new StringBuilder();
         for (Atom atom : input.atomList) {
 
             //getting Label Table
@@ -103,9 +104,10 @@ public class CodeGen {
                     loadInstruction.append("0000");
 
                     //adding register
-
+                    loadInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
+                    loadInstruction.append(Integer.parseInt(atom.getOperand(0)));
 
                     /*
                     * Handling the main Add instruction 
@@ -118,7 +120,7 @@ public class CodeGen {
                     mainInstruction.append("0000");
 
                     //adding register
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
+                    mainInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
                     mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
@@ -134,8 +136,10 @@ public class CodeGen {
                     storeInstruction.append("0000");
 
                     //adding register
+                    storeInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
+                    storeInstruction.append(Integer.parseInt(atom.getOperand(0)));
 
                 case SUB:
                     /*
@@ -149,9 +153,10 @@ public class CodeGen {
                     loadInstruction.append("0000");
 
                     //adding register
-
+                    loadInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
+                    loadInstruction.append(Integer.parseInt(atom.getOperand(1)));
 
                     /*
                     * Handling the main Sub instruction 
@@ -164,7 +169,7 @@ public class CodeGen {
                     mainInstruction.append("0000");
 
                     //adding register
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
+                    mainInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
                     mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
@@ -180,8 +185,11 @@ public class CodeGen {
                     storeInstruction.append("0000");
 
                     //adding register
+                    storeInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
+                    storeInstruction.append(Integer.parseInt(atom.getOperand(0)));
+                    
 
                 case MUL:
                     /*
@@ -195,9 +203,10 @@ public class CodeGen {
                     loadInstruction.append("0000");
 
                     //adding register
-
+                    loadInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
+                    loadInstruction.append(Integer.parseInt(atom.getOperand(0)));
 
                     /*
                     * Handling the main Mul instruction 
@@ -210,7 +219,7 @@ public class CodeGen {
                     mainInstruction.append("0000");
 
                     //adding register
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
+                    mainInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
                     mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
@@ -226,8 +235,10 @@ public class CodeGen {
                     storeInstruction.append("0000");
 
                     //adding register
+                    storeInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
+                    storeInstruction.append(Integer.parseInt(atom.getOperand(0)));
 
                 case DIV:
                     /*
@@ -241,9 +252,10 @@ public class CodeGen {
                     loadInstruction.append("0000");
 
                     //adding register
-
+                    loadInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
+                    loadInstruction.append(Integer.parseInt(atom.getOperand(0)));
 
                     /*
                     * Handling the main Add instruction 
@@ -256,7 +268,7 @@ public class CodeGen {
                     mainInstruction.append("0000");
 
                     //adding register
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
+                    mainInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
                     mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
@@ -272,8 +284,10 @@ public class CodeGen {
                     storeInstruction.append("0000");
 
                     //adding register
+                    storeInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
+                    storeInstruction.append(Integer.parseInt(atom.getOperand(0)));
 
                 case JMP:
                     //adding opcode
@@ -288,10 +302,17 @@ public class CodeGen {
                     //adding memory location
                         //this refers to where we jump to, which is a label
                         //I don't know how we are handling that for now
-
+                    //pull up label table and find label's address
+                    String label = atom.getOperand(0);
+                    Integer targetAddress = labelTable.get(label);
+                    if (targetAddress == null) {
+                    	throw new IllegalArgumentException("Undefined label: " + label);
+            		}
+                    instruction.append(String.format("%04d", targetAddress)); // Label address
+					
                 case TST:
                     /*
-                    * Handles initial Load instruction(s)
+                    * Handles initial Load instruction(s) //I don't think we need this
                     */
 
                     /*
@@ -325,18 +346,102 @@ public class CodeGen {
                             mainInstruction.append("0110");
 
                         default:
-                            // Insert Exception Here
+                            throw new RuntimeException("Unknown Cmp");
                     }
 
                     //adding register
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
+                    mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
 
                     //adding memory location
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(2)));
+                    mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
+
+                    //Handling Jmp instruction//
+                    //adding opcode
+                    jumpInstruction.append("0101");
+
+                    //adding comp
+                    jumpInstruction.append("0000");
+
+                    //adding register
+                    jumpInstruction.append("0000");
+
+                    //adding memory location
+                    //pull up label table and find label's address
+                    String label = atom.getOperand(0);
+                    Integer targetAddress = labelTable.get(label);
+                    if (targetAddress == null) {
+                    	throw new IllegalArgumentException("Undefined label: " + label);
+            		}
+                    instruction.append(String.format("%04d", targetAddress)); // Label address
 
                 case NEG:
+                    /*
+                     * Handling the initial Load Instruction
+                     */
+
+                     //adding opcode
+                     loadInstruction.append("0111");
+
+                     //adding comp
+                     loadInstruction.append("0000");
+
+                     //adding register
+                     loadInstruction.append(Integer.parseInt(atom.getOperand(1)));
+
+                     //adding memory location
+                     loadInstruction.append(Integer.parseInt(atom.getOperand(0)));
+                     
+                     /*
+                      * Handling the main Sub instruction //gets number to be 0
+                      */
+
+                      //adding opcode
+                      mainInstruction.append("0010");
+
+                      //adding comp
+                      mainInstruction.append("0000");
+
+                      //adding register
+                      mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
+
+                      //adding memory location
+                      mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
+                      
+                      /*
+                       * Handling the main Sub instruction //gets number to be negative version of itself
+                       */
+
+                       //adding opcode
+                       mainInstruction.append("0010");
+
+                       //adding comp
+                       mainInstruction.append("0000");
+
+                       //adding register
+                       mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
+
+                       //adding memory location
+                       mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
+
+
+                     /*
+                     * Handling the final Store instruction
+                     */
+
+                     //adding opcode
+                     storeInstruction.append("1000");
+
+                     //adding comp
+                     storeInstruction.append("0000");
+
+                     //adding register
+                     mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
+
+                     //adding memory location
+                     mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
 
                 case LBL:
+                    //since this is in first pass, does this need to do anything?
                 
                 case MOV:
 
@@ -345,10 +450,11 @@ public class CodeGen {
                 //case STO:  Which case above do these three correspond with?
                                 //it isn't that they correspond, these are instructions that
                                 //we need to encode that aren't part of the atoms
+                                //load and store are in each atom that need them so do we need these?
                 //case HLT:
 
                 default:
-                    // Insert Exception
+                    throw new RuntimeException("Unknown Atom");
             }
         }
     }
