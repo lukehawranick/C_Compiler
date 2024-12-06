@@ -107,6 +107,18 @@ public class Instruction {
         return sb.toString();
     }
     
+    public String toStringPrettyPlus() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(toStringPretty()).append(' ');
+        sb.append(Opcode.toString(getOpcode())).append(' ');
+        sb.append(getMode()).append(' ');
+        sb.append(Cmp.toString(getCmp())).append(' ');
+        sb.append("R" + getR() + ' ');
+        sb.append("A" + getA() + '\n');
+
+        return sb.toString();
+    }
+
     private String toBinStr(int value, int padBits) {
         return String.format("%" + padBits + "s", Integer.toBinaryString(value)).replace(' ', '0');
     }
@@ -138,6 +150,21 @@ public class Instruction {
                     throw new IllegalArgumentException("Cannot be directly mapped.");
             }
         }
+
+        public static String toString(int opcode) {
+            switch (opcode) {
+                case ADD: return "ADD";
+                case SUB: return "SUB";
+                case MUL: return "MUL";
+                case DIV: return "DIV";
+                case JMP: return "JMP";
+                case CMP: return "CMP";
+                case LOD: return "LOD";
+                case STO: return "STO";
+                case HLT: return "HLT";
+                default: return "INVALID";
+            }
+        }
     }
 
     public static class Cmp {
@@ -148,5 +175,18 @@ public class Instruction {
         public static final int LESSER_OR_EQUAL = 4;
         public static final int GREATER_OR_EQUAL = 5;
         public static final int UNEQUAL = 6;
+
+        public static String toString(int cmp) {
+            switch (cmp) {
+                case ALWAYS: return "ALWAYS";
+                case EQUAL: return "EQUAL";
+                case LESSER: return "LESSER";
+                case GREATER: return "GREATER";
+                case LESSER_OR_EQUAL: return "LESSER_OR_EQUAL";
+                case GREATER_OR_EQUAL: return "GREATER_OR_EQUAL";
+                case UNEQUAL: return "UNEQUAL";
+                default: return "INVALID";
+            }
+        }
     }
 }

@@ -9,6 +9,7 @@ package mainpackage;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -69,10 +70,19 @@ public class Compiler {
             if (tokenDest == null) {
                 List<Atom> atoms = new LinkedList<>();
                 new Parser(s, atoms::add).parse();
-
-                CodeGen gen = new CodeGen(atoms,
-                    (inst) -> {System.out.printf("%d: %s\n", pc, new Instruction(inst).toStringPretty()); pc+=4;});
+                for (Atom a : atoms) System.out.println(a);
+                List<Integer> code = new ArrayList<>();
+                CodeGen gen = new CodeGen(atoms, code::add);
                 gen.generate();
+                for (int j = 0; j < gen.getCodeSegBeginning(); j++) {
+                    System.out.printf("%d: %s\n", pc, Float.intBitsToFloat(code.get(j)));
+                    pc += 4;
+                }
+                for (int j = gen.getCodeSegBeginning(); j < code.size(); j++) {
+                    System.out.printf("%d: %s\n", pc,
+                        new Instruction(code.get(j)).toStringPrettyPlus());
+                    pc += 4;
+                }
             } else {
                 try (FileWriter fw = new FileWriter(tokenDest)) {
                     while (s.hasNext())

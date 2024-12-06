@@ -24,6 +24,9 @@ public class CodeGen {
     // We will only ever use reg0 because there are no instructions
     // that can utilize more than one register anyways.
     private static final int REG = 0;
+
+    private int codeSegmentBeginning = -1;
+
     // Parser to Read Atoms From
     private final List<Atom> input;
 
@@ -94,6 +97,7 @@ public class CodeGen {
         Symbols symbols = generateTables();
         // Output constants and variables
         output(symbols.getBeginningOfMemory());
+        codeSegmentBeginning = symbols.getMemConsumed();
 
         //Setting counting variables
         int programCounter = symbols.getMemConsumed();  //increments by 4
@@ -172,6 +176,12 @@ public class CodeGen {
                     throw new RuntimeException("Unknown Atom");
             }
         }
+    }
+
+    public int getCodeSegBeginning() {
+        if (codeSegmentBeginning == -1)
+            throw new IllegalStateException("Cannot get the text segment beginning before generating code.");
+        return codeSegmentBeginning;
     }
 
     /**
