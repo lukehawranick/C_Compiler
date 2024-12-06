@@ -22,6 +22,8 @@ public class Compiler {
     private static final String TOKEN_DEST_FILE_OPTION = "-t";
     private static final String ATOM_DEST_FILE_OPTION = "-a";
 
+    private static int pc = 0;
+
     public static void main(String[] args) {
         String sourceFile = "sourcecode.myc";
         String tokenDest = null; // !null: Scanner -> Parser, null: Scanner -> File
@@ -68,7 +70,8 @@ public class Compiler {
                 List<Atom> atoms = new LinkedList<>();
                 new Parser(s, atoms::add).parse();
 
-                CodeGen gen = new CodeGen(atoms, System.out::println);
+                CodeGen gen = new CodeGen(atoms,
+                    (inst) -> {System.out.printf("%d: %s\n", pc, new Instruction(inst).toStringPretty()); pc+=4;});
                 gen.generate();
             } else {
                 try (FileWriter fw = new FileWriter(tokenDest)) {

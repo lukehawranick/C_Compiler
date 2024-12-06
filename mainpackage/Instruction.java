@@ -21,6 +21,10 @@ public class Instruction {
         setA(a);
     }
 
+    public Instruction(int value) {
+        this.value = value;
+    }
+
     public void setOpcode(int opcode) {
         if (opcode < 0 || opcode > 9)
             throw new IllegalArgumentException("Opcode must be greater than or equal to 0 and less than or equal to 9.");
