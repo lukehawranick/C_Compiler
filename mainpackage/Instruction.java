@@ -114,7 +114,7 @@ public class Instruction {
         sb.append(getMode()).append(' ');
         sb.append(Cmp.toString(getCmp())).append(' ');
         sb.append("R" + getR() + ' ');
-        sb.append("A" + getA() + '\n');
+        sb.append("A" + getA());
 
         return sb.toString();
     }
