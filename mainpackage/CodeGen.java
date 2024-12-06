@@ -2,7 +2,7 @@ package mainpackage;
 /**
  * @file Parser.java
  * @brief An implementation of Code Generator: Atom Input -> Binary Output
- * @authors Mallory Anderson, Koren Spell, Jeremy Appiah
+ * @authors Mallory Anderson, Koren Spell, Jeremy Appiah, Sara Ackerman
  * @reviewers 
  * @date 12/04/2024
  */
@@ -95,6 +95,7 @@ public class CodeGen {
         StringBuilder loadInstruction = new StringBuilder();
         StringBuilder mainInstruction = new StringBuilder();
         StringBuilder storeInstruction = new StringBuilder();
+        StringBuilder jumpInstruction = new StringBuilder();
 
         //iterating through the atom list
         for (Atom atom : input.atomList) {
@@ -112,9 +113,10 @@ public class CodeGen {
                     loadInstruction.append("0000");
 
                     //adding register
-
+                    loadInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
+                    loadInstruction.append(Integer.parseInt(atom.getOperand(0)));
 
                     //increment program counter
                     programCounter += 4;
@@ -130,7 +132,7 @@ public class CodeGen {
                     mainInstruction.append("0000");
 
                     //adding register
-                    mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(0))));
+                    mainInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
                     mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(1))));
@@ -149,8 +151,10 @@ public class CodeGen {
                     storeInstruction.append("0000");
 
                     //adding register
+                    storeInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
+                    storeInstruction.append(Integer.parseInt(atom.getOperand(0)));
 
                     //increment program counter
                     programCounter += 4;
@@ -167,9 +171,10 @@ public class CodeGen {
                     loadInstruction.append("0000");
 
                     //adding register
-
+                    loadInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
+                    loadInstruction.append(Integer.parseInt(atom.getOperand(1)));
 
                     //increment program counter
                     programCounter += 4;
@@ -185,7 +190,7 @@ public class CodeGen {
                     mainInstruction.append("0000");
 
                     //adding register
-                    mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(0))));
+                    mainInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
                     mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(1))));
@@ -204,8 +209,11 @@ public class CodeGen {
                     storeInstruction.append("0000");
 
                     //adding register
+                    storeInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
+                    storeInstruction.append(Integer.parseInt(atom.getOperand(0)));
+                    
 
                     //increment program counter
                     programCounter += 4;
@@ -222,9 +230,10 @@ public class CodeGen {
                     loadInstruction.append("0000");
 
                     //adding register
-
+                    loadInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
+                    loadInstruction.append(Integer.parseInt(atom.getOperand(0)));
 
                     //increment program counter
                     programCounter += 4;
@@ -240,7 +249,7 @@ public class CodeGen {
                     mainInstruction.append("0000");
 
                     //adding register
-                    mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(0))));
+                    mainInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
                     mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(1))));
@@ -259,8 +268,10 @@ public class CodeGen {
                     storeInstruction.append("0000");
 
                     //adding register
+                    storeInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
+                    storeInstruction.append(Integer.parseInt(atom.getOperand(0)));
 
                     //increment program counter
                     programCounter += 4;
@@ -277,9 +288,10 @@ public class CodeGen {
                     loadInstruction.append("0000");
 
                     //adding register
-
+                    loadInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
+                    loadInstruction.append(Integer.parseInt(atom.getOperand(0)));
 
                     //increment program counter
                     programCounter += 4;
@@ -295,7 +307,7 @@ public class CodeGen {
                     mainInstruction.append("0000");
 
                     //adding register
-                    mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(0))));
+                    mainInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
                     mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(1))));
@@ -314,8 +326,10 @@ public class CodeGen {
                     storeInstruction.append("0000");
 
                     //adding register
+                    storeInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //adding memory location
+                    storeInstruction.append(Integer.parseInt(atom.getOperand(0)));
 
                     //increment program counter
                     programCounter += 4;
@@ -339,9 +353,19 @@ public class CodeGen {
                     //increment program counter
                     programCounter += 4;
 
+                    // I think my (Koren) correction above works, but if it doesn't use this
+
+                    // String label = atom.getOperand(0);
+                    // Integer targetAddress = labelTable.get(label);
+                    // if (targetAddress == null) {
+                    // 	throw new IllegalArgumentException("Undefined label: " + label);
+            		// }
+                    // mainInstruction.append(String.format("%04d", targetAddress)); // Label address
+					
                 case TST:
                     /*
-                    * Handles initial Load instruction(s)
+                    * Handles initial Load instruction(s) //I don't think we need this
+                                                          //I think we do (maybe). we can remove these when we optimize later, but for now I think we always do it -Koren
                     */
 
                     //increment program counter
@@ -378,14 +402,39 @@ public class CodeGen {
                             mainInstruction.append("0110");
 
                         default:
-                            // Insert Exception Here
+                            throw new RuntimeException("Unknown Cmp");
                     }
 
                     //adding register
-                    mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(1))));
+                    mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
 
                     //adding memory location
-                    mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(2))));
+                    mmainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(1))));
+
+                    /*
+                    * Handling nested Jump instruction
+                    */
+
+                    //adding opcode
+                    jumpInstruction.append("0101");
+
+                    //adding comp
+                    jumpInstruction.append("0000");
+
+                    //adding register
+                    jumpInstruction.append("0000");
+                    
+                    //adding memory location
+                    jumpInstruction.append(Integer.toBinaryString(labelTable.get(labelCounter)));
+
+                    //incrementing label counter
+                    labelCounter++;
+
+                    //incrementing program counter
+                    programCounter++;
+
+                    //adding memory location (TST)
+                    mainInstruction.append(Integer.parseInt(atom.getOperand(2)));
 
                     //increment program counter
                     programCounter += 4;
@@ -398,6 +447,70 @@ public class CodeGen {
                     programCounter += 4;
 
                 case NEG:
+                    /*
+                     * Handling the initial Load Instruction
+                     */
+
+                     //adding opcode
+                     loadInstruction.append("0111");
+
+                     //adding comp
+                     loadInstruction.append("0000");
+
+                     //adding register
+                     loadInstruction.append(Integer.parseInt(atom.getOperand(1)));
+
+                     //adding memory location
+                     loadInstruction.append(Integer.parseInt(atom.getOperand(0)));
+                     
+                     /*
+                      * Handling the main Sub instruction //gets number to be 0
+                      */
+
+                      //adding opcode
+                      mainInstruction.append("0010");
+
+                      //adding comp
+                      mainInstruction.append("0000");
+
+                      //adding register
+                      mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
+
+                      //adding memory location
+                      mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
+                      
+                      /*
+                       * Handling the main Sub instruction //gets number to be negative version of itself
+                       */
+
+                       //adding opcode
+                       mainInstruction.append("0010");
+
+                       //adding comp
+                       mainInstruction.append("0000");
+
+                       //adding register
+                       mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
+
+                       //adding memory location
+                       mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
+
+
+                     /*
+                     * Handling the final Store instruction
+                     */
+
+                     //adding opcode
+                     storeInstruction.append("1000");
+
+                     //adding comp
+                     storeInstruction.append("0000");
+
+                     //adding register
+                     mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
+
+                     //adding memory location
+                     mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
 
                 case LBL: //handled in generateLabelTable()
                     //increment program counter
@@ -408,7 +521,7 @@ public class CodeGen {
                 case MOV:
 
                 default:
-                    // Insert Exception
+                    throw new RuntimeException("Unknown Atom");
             }
         }
     }
