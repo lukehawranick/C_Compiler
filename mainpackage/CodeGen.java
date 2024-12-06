@@ -2,7 +2,7 @@ package mainpackage;
 /**
  * @file Parser.java
  * @brief An implementation of Code Generator: Atom Input -> Binary Output
- * @authors Mallory Anderson, Koren Spell, Jeremy Appiah, Sara Ackerman
+ * @authors Mallory Anderson, Koren Spell, Jeremy Appiah, Sara Ackerman, Garrett Williams
  * @reviewers 
  * @date 12/04/2024
  */
@@ -13,18 +13,22 @@ import java.util.List;
 import java.util.Stack;
 import java.util.function.Consumer;
 
+import mainpackage.Atom.Operand;
+import mainpackage.Instruction.Cmp;
+import mainpackage.Instruction.Opcode;
+
 /**
  * @brief Parses Atoms From Scanner Into Binary
  */
 public class CodeGen {
+    // We will only ever use reg0 because there are no instructions
+    // that can utilize more than one register anyways.
+    private static final int REG = 0;
     // Parser to Read Atoms From
-    private final Parser input;
+    private final List<Atom> input;
 
     // Consumer to Handle Binary
     private final Consumer<Integer> output;
-    
-    // Most Recently Consumed Atom
-    private Atom atom;
 
     // Stack Holding Captured Output for Deferred Handling.
     private Stack<List<Integer>> capturedOutput = new Stack<List<Integer>>();
@@ -34,319 +38,86 @@ public class CodeGen {
      * @param input The Parser Object Providing Atoms
      * @param output The Consumer Object to Accept Outputs
      */
-    public CodeGen(Parser input, Consumer<Integer> output) {
+    public CodeGen(List<Atom> input, Consumer<Integer> output) {
         this.input = input;
         this.output = output;
     }
 
-        /**
+    /**
      * @brief Serves as our first pass, filling in the label table
      */
-    public HashMap<Integer, Integer> generateLabelTable() {
-        //initializing label table
-        HashMap<Integer, Integer> labelTable = new HashMap<Integer, Integer>();
-        
+    private Symbols generateTables() {
+        Symbols symbols = new Symbols();
         //program counter
         int pc = 0;
 
-        //label counter
-        int label = 1;
+        // Points to the next memory address to be allocated to a variable or constant.
+        int memoryCounter = 0;
         
         //iterate through generated atoms
-        for (Atom atom : input.atomList) {
-            if (atom.opcode == Atom.Opcode.LBL)
-                labelTable.put(label++, pc);
+        for (Atom atom : input) {
+            for (Operand o : atom.operands) {
+                if (o == null)
+                    continue;
+                switch (o.type) {
+                    case Operand.CONSTANT:
+                        if (symbols.constantTable.putIfAbsent(o.getConstant(), memoryCounter) == null)
+                            memoryCounter++;
+                        break;
+                    case Operand.VARIABLE:
+                        if (symbols.variableTable.putIfAbsent(o.getSymbol(), memoryCounter) == null)
+                            memoryCounter++;
+                        break;
+                    case Operand.LABEL_DEFINITION:
+                        symbols.labelTable.putIfAbsent(o.getSymbol(), pc);
+                        break;
+                    default:
+                        break;
+                }
+            }
             pc += 4;
         }
 
-        return labelTable;
+        return symbols;
     }
-    
+
     /**
      * @brief Starts Parsing Input
      * @throws CodeGenException If Invalid Input
      */
     public void generate() {
-        // Maps variables to addresses (variables start at address 200)
-        HashMap<String, Integer> variableMap = new HashMap<>();
-
         //getting the Label Table
-        HashMap<Integer, Integer> labelTable = generateLabelTable();
+        Symbols symbols = generateTables();
+        // Output constants and variables
+        output(symbols.getBeginningOfMemory());
 
         //Setting counting variables
         int programCounter = 0;  //increments by 4
 
-        int labelCounter = 1;    //increments by 1
-
-        //setting stringbuilders for the instruction types
-        StringBuilder loadInstruction = new StringBuilder();
-        StringBuilder mainInstruction = new StringBuilder();
-        StringBuilder storeInstruction = new StringBuilder();
-        StringBuilder jumpInstruction = new StringBuilder();
-
         //iterating through the atom list
-        for (Atom atom : input.atomList) {
+        for (Atom atom : input) {
             switch (atom.opcode) {
                 case ADD:
-                    /*
-                    * Handling the initial Load Instruction
-                    */
-
-                    //adding opcode
-                    loadInstruction.append("0111");
-
-                    //adding comp
-                    loadInstruction.append("0000");
-
-                    //adding register     //I don't think that the Load instruction has an atom, so we have to get these values some other way I think -Koren
-                    loadInstruction.append(Integer.parseInt(atom.getOperand(2)));
-
-                    //adding memory location
-                    loadInstruction.append(Integer.parseInt(atom.getOperand(0)));
-
-                    //increment program counter
-                    programCounter += 4;
-
-                    /*
-                    * Handling the main Add instruction 
-                    */
-
-                    //adding opcode
-                    mainInstruction.append("0001");
-
-                    //adding comp
-                    mainInstruction.append("0000");
-
-                    //adding register
-                    mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(2))));
-
-                    //adding memory location
-                    mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(1))));
-
-                    //increment program counter
-                    programCounter += 4;
-
-                    /*
-                    * Handling the final Store instruction
-                    */
-
-                    //adding opcode
-                    storeInstruction.append("1000");
-
-                    //adding comp
-                    storeInstruction.append("0000");
-
-                    //adding register     //Same idea as load above, i don't think these instrucions have atoms to get data from -Koren
-                    storeInstruction.append(Integer.parseInt(atom.getOperand(2)));
-
-                    //adding memory location
-                    storeInstruction.append(Integer.parseInt(atom.getOperand(0)));
-
-                    //increment program counter
-                    programCounter += 4;
-
-                    break;
-
                 case SUB:
-                    /*
-                    * Handling the initial Load Instruction
-                    */
-
-                    //adding opcode
-                    loadInstruction.append("0111");
-
-                    //adding comp
-                    loadInstruction.append("0000");
-
-                    //adding register
-                    loadInstruction.append(Integer.parseInt(atom.getOperand(2)));
-
-                    //adding memory location
-                    loadInstruction.append(Integer.parseInt(atom.getOperand(1)));
-
-                    //increment program counter
-                    programCounter += 4;
-
-                    /*
-                    * Handling the main Sub instruction 
-                    */
-
-                    //adding opcode
-                    mainInstruction.append("0010");
-
-                    //adding comp
-                    mainInstruction.append("0000");
-
-                    //adding register
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(2)));
-
-                    //adding memory location
-                    mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(1))));
-
-                    //increment program counter
-                    programCounter += 4;
-
-                    /*
-                    * Handling the final Store instruction
-                    */
-
-                    //adding opcode
-                    storeInstruction.append("1000");
-
-                    //adding comp
-                    storeInstruction.append("0000");
-
-                    //adding register
-                    storeInstruction.append(Integer.parseInt(atom.getOperand(2)));
-
-                    //adding memory location
-                    storeInstruction.append(Integer.parseInt(atom.getOperand(0)));
-                    
-
-                    //increment program counter
-                    programCounter += 4;
-
-                    break;
-
                 case MUL:
-                    /*
-                    * Handling the initial Load Instruction
-                    */
-
-                    //adding opcode
-                    loadInstruction.append("0111");
-
-                    //adding comp
-                    loadInstruction.append("0000");
-
-                    //adding register
-                    loadInstruction.append(Integer.parseInt(atom.getOperand(2)));
-
-                    //adding memory location
-                    loadInstruction.append(Integer.parseInt(atom.getOperand(0)));
-
-                    //increment program counter
-                    programCounter += 4;
-
-                    /*
-                    * Handling the main Mul instruction 
-                    */
-
-                    //adding opcode
-                    mainInstruction.append("0011");
-
-                    //adding comp
-                    mainInstruction.append("0000");
-
-                    //adding register
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(2)));
-
-                    //adding memory location
-                    mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(1))));
-
-                    //increment program counter
-                    programCounter += 4;
-
-                    /*
-                    * Handling the final Store instruction
-                    */
-
-                    //adding opcode
-                    storeInstruction.append("1000");
-
-                    //adding comp
-                    storeInstruction.append("0000");
-
-                    //adding register
-                    storeInstruction.append(Integer.parseInt(atom.getOperand(2)));
-
-                    //adding memory location
-                    storeInstruction.append(Integer.parseInt(atom.getOperand(0)));
-
-                    //increment program counter
-                    programCounter += 4;
-
-                    break;
-
                 case DIV:
-                    /*
-                    * Handling the initial Load Instruction
-                    */
-
-                    //adding opcode
-                    loadInstruction.append("0111");
-
-                    //adding comp
-                    loadInstruction.append("0000");
-
-                    //adding register
-                    loadInstruction.append(Integer.parseInt(atom.getOperand(2)));
-
-                    //adding memory location
-                    loadInstruction.append(Integer.parseInt(atom.getOperand(0)));
+                    output(
+                        Instruction.create(Opcode.LOD, 0, REG, symbols.opToAddr(atom.getOperand(0))), // LOAD LHS
+                        Instruction.create(Opcode.fromAtomOpcode(atom.opcode), 0, REG, symbols.opToAddr(atom.getOperand(1))), // ADD RHS
+                        Instruction.create(Opcode.STO, 0, REG, symbols.opToAddr(atom.getOperand(2))) // STORE RESULT
+                        );
 
                     //increment program counter
-                    programCounter += 4;
-
-                    /*
-                    * Handling the main Add instruction 
-                    */
-
-                    //adding opcode
-                    mainInstruction.append("0100");
-
-                    //adding comp
-                    mainInstruction.append("0000");
-
-                    //adding register
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(2)));
-
-                    //adding memory location
-                    mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(1))));
-
-                    //increment program counter
-                    programCounter += 4;
-
-                    /*
-                    * Handling the final Store instruction
-                    */
-
-                    //adding opcode
-                    storeInstruction.append("1000");
-
-                    //adding comp
-                    storeInstruction.append("0000");
-
-                    //adding register
-                    storeInstruction.append(Integer.parseInt(atom.getOperand(2)));
-
-                    //adding memory location
-                    storeInstruction.append(Integer.parseInt(atom.getOperand(0)));
-
-                    //increment program counter
-                    programCounter += 4;
-
+                    programCounter += 12;
                     break;
-
                 case JMP:
-                    //adding opcode
-                    mainInstruction.append("0101");
-
-                    //adding comp
-                    mainInstruction.append("0000");
-
-                    //adding register
-                    mainInstruction.append("0000");
-
-                    //adding memory location
-                    mainInstruction.append(Integer.toBinaryString(labelTable.get(labelCounter)));
-
-                    //increment lable counter
-                    labelCounter++;
+                    output(
+                        Instruction.create(Opcode.CMP, Cmp.ALWAYS, 0, 0), // Set flag to true so that we can jump
+                        Instruction.create(Opcode.JMP, 0, 0, symbols.opToAddr(atom.getOperand(4))) // jump to the label
+                        );
 
                     //increment program counter
-                    programCounter += 4;
-
+                    programCounter += 8;
                     break;
 
                     // I think my (Koren) correction above works, but if it doesn't use this
@@ -359,206 +130,39 @@ public class CodeGen {
                     // mainInstruction.append(String.format("%04d", targetAddress)); // Label address
 					
                 case TST:
-                    /*
-                    * Handles initial Load instruction(s) //I don't think we need this
-                                                          //I think we do (maybe). we can remove these when we optimize later, but for now I think we always do it -Koren
-                    */
+                    output(
+                        Instruction.create(Opcode.LOD, 0, REG, symbols.opToAddr(atom.getOperand(0))), // Load the lhs
+                        Instruction.create(Opcode.CMP, atom.getOperand(3).getCmp(), REG, symbols.opToAddr(atom.getOperand(1))), // lhs cmp rhs
+                        Instruction.create(Opcode.JMP, 0, 0, symbols.opToAddr(atom.getOperand(4))) // jump if flag is true
+                        );
 
                     //increment program counter
-                    programCounter += 4;
-
-                    /*
-                    * Handling main Cmp instruction
-                    */
-
-                    //adding opcode
-                    mainInstruction.append("0110");
-
-                    //adding comp
-                    switch(atom.getOperand(3)) {
-                        case "0":
-                            mainInstruction.append("0000");
-                            break;
-
-                        case "1":
-                            mainInstruction.append("0001");
-                            break;
-
-                        case "2":
-                            mainInstruction.append("0010");
-                            break;
-
-                        case "3":
-                            mainInstruction.append("0011");
-                            break;
-
-                        case "4":
-                            mainInstruction.append("0100");
-                            break;
-
-                        case "5":
-                            mainInstruction.append("0101");
-                            break;
-
-                        case "6":
-                            mainInstruction.append("0110");
-                            break;
-
-                        default:
-                            throw new RuntimeException("Unknown Cmp");
-                    }
-
-                    //adding register
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
-
-                    //adding memory location
-                    mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(1))));
-
-                    /*
-                    * Handling nested Jump instruction
-                    */
-
-                    //adding opcode
-                    jumpInstruction.append("0101");
-
-                    //adding comp
-                    jumpInstruction.append("0000");
-
-                    //adding register
-                    jumpInstruction.append("0000");
-                    
-                    //adding memory location
-                    jumpInstruction.append(Integer.toBinaryString(labelTable.get(labelCounter)));
-
-                    //incrementing label counter
-                    labelCounter++;
-
-                    //incrementing program counter
-                    programCounter++;
-
-                    //adding memory location (TST)
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(2)));
-
-                    //increment program counter
-                    programCounter += 4;
-
-                    /*
-                    * Handles final Store instruction(s)
-                    */
-
-                    //increment program counter
-                    programCounter += 4;
-
+                    programCounter += 12;
                     break;
 
                 case NEG:
-                    /*
-                     * Handling the initial Load Instruction
-                     */
+                    output(
+                        Instruction.create(Opcode.LOD, 0, REG, symbols.opToAddr(atom.getOperand(0))), // Load lhs
+                        Instruction.create(Opcode.SUB, 0, REG, symbols.opToAddr(atom.getOperand(0))), // Handling the main Sub instruction //gets number to be 0
+                        Instruction.create(Opcode.SUB, 0, REG, symbols.opToAddr(atom.getOperand(0))), // Handling the main Sub instruction //gets number to be negative version of itself
+                        Instruction.create(Opcode.STO, 0, REG, symbols.opToAddr(atom.getOperand(2))) // Store result
+                        );
 
-                     //adding opcode
-                    loadInstruction.append("0111");
-
-                     //adding comp
-                    loadInstruction.append("0000");
-
-                     //adding register
-                    loadInstruction.append(Integer.parseInt(atom.getOperand(1)));
-
-                    //adding memory location
-                    loadInstruction.append(Integer.parseInt(atom.getOperand(0)));
-                    
-                    /*
-                    * Handling the main Sub instruction //gets number to be 0
-                    */
-
-                    //adding opcode
-                    mainInstruction.append("0010");
-
-                    //adding comp
-                    mainInstruction.append("0000");
-
-                    //adding register
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
-
-                    //adding memory location
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
-                    
-                    /*
-                    * Handling the main Sub instruction //gets number to be negative version of itself
-                    */
-
-                    //adding opcode
-                    mainInstruction.append("0010");
-
-                    //adding comp
-                    mainInstruction.append("0000");
-
-                    //adding register
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
-
-                    //adding memory location
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
-
-
-                    /*
-                     * Handling the final Store instruction
-                     */
-
-                    //adding opcode
-                    storeInstruction.append("1000");
-
-                    //adding comp
-                    storeInstruction.append("0000");
-
-                    //adding register
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
-
-                    //adding memory location
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
-
-		    break;
+                    programCounter += 16;
+		            break;
 
                 case LBL: //handled in generateLabelTable()
-                    //increment program counter
-                    programCounter += 4;
-
+                    // Dont increment pc because this is not generating any instructions
                     break;
                 
                 case MOV:
-		     /*
-                     * Handling the initial Load Instruction
-                     */
+                    output(
+                        Instruction.create(Opcode.LOD, 0, REG, symbols.opToAddr(atom.getOperand(0))), // Handling the initial Load Instruction
+                        Instruction.create(Opcode.STO, 0, REG, symbols.opToAddr(atom.getOperand(2))) // Handling the Store instruction
+                        );
 
-                     //adding opcode
-                     loadInstruction.append("0111");
-
-                     //adding comp
-                     loadInstruction.append("0000");
-
-                     //adding register
-                     loadInstruction.append(Integer.parseInt(atom.getOperand(0)));
-
-                     //adding memory location
-                     loadInstruction.append(Integer.parseInt(atom.getOperand(1)));
-                     
-                     /*
-                     * Handling the Store instruction
-                     */
-
-                     //adding opcode
-                     storeInstruction.append("1000");
-
-                     //adding comp
-                     storeInstruction.append("0000");
-
-                     //adding register
-                     storeInstruction.append(Integer.parseInt(atom.getOperand(0)));
-
-                     //adding memory location
-                     storeInstruction.append(Integer.parseInt(atom.getOperand(1)));
-		
-		     break;
+                    programCounter += 8;
+		            break;
 
                 default:
                     throw new RuntimeException("Unknown Atom");
@@ -592,13 +196,52 @@ public class CodeGen {
             output.accept(binary);
     }
 
-    /**
-     * @brief Sends List of Binary Instructions to Output
-     * @param instructions List of Binary Instructions to Be Sent
-     */
-    private void output(List<Integer> instructions) {
-        for (Integer i : instructions)
-            output(i);
+    private void output(int... instructions) {
+        for (int instruction : instructions)
+            output(instruction);
+    }
+
+    private static class Symbols {
+        //initializing label table
+        public final HashMap<String, Integer> labelTable = new HashMap<>();
+        // Maps constant integer values to their locations in memory
+        // because for some reason this assembly language has no immediate instructions :|
+        public final HashMap<Float, Integer> constantTable = new HashMap<>();
+        // Maps variables to addresses
+        public final HashMap<String, Integer> variableTable = new HashMap<>();
+
+        /**
+         * Returns the memory that is consumed by constants and variables.
+         */
+        public int getMemConsumed() {
+            return constantTable.size() + variableTable.size();
+        }
+
+        public int opToAddr(Operand op) {
+            if (op.type == Operand.CONSTANT) {
+                return constantTable.get(op.getConstant());
+            } else if (op.type == Operand.VARIABLE) {
+                return variableTable.get(op.getSymbol());
+            } else if (op.type == Operand.LABEL_USE) {
+                return labelTable.get(op.getSymbol());
+            } else {
+                throw new RuntimeException();
+            }
+        }
+
+        /**
+         * Returns an array of integers that make up the first bytes of memory.
+         * This memory contains variables and constants.
+         * @return
+         */
+        public int[] getBeginningOfMemory() {
+            int[] toReturn = new int[getMemConsumed()];
+            for (HashMap.Entry<Float, Integer> e : constantTable.entrySet())
+                toReturn[e.getValue()] = Float.floatToIntBits(e.getKey());
+            // we dont have to initialize the variables because that will be
+            // handled in runtime
+            return toReturn;
+        }
     }
 }
 

@@ -16,7 +16,7 @@ public class Atom {
     public final Opcode opcode;
 
     // The operands of the Atom.
-    private final String[] operands;
+    public final Operand[] operands;
 
     /**
      * Constructs an Atom with the given opcode and operands.
@@ -25,7 +25,7 @@ public class Atom {
      */
     public Atom(Opcode opcode, String... operands) {
         this.opcode = opcode;
-        this.operands = operands;
+        this.operands = parseOperands(opcode, operands);
     }
 
     /**
@@ -33,7 +33,7 @@ public class Atom {
      * @param index
      * @return
      */
-    public String getOperand(int index) {
+    public Operand getOperand(int index) {
         return index >= operands.length ? null : operands[index];
     }
 
@@ -140,6 +140,124 @@ public class Atom {
 
         public static String compNumToOpposite(String compNum) {
             return Integer.toString(7 - Integer.parseInt(compNum));
+        }
+    }
+
+    /**
+     * Returns a list of operands.
+     */
+    private static Operand[] parseOperands(Opcode opcode, String[] operands) {
+        switch (opcode) {
+            case ADD:
+            case SUB:
+            case MUL:
+            case DIV:
+                return new Operand[] {
+                    new Operand(Operand.CONSTANT_OR_VARIABLE, operands[0]), // lhs
+                    new Operand(Operand.CONSTANT_OR_VARIABLE, operands[1]), // rhs
+                    new Operand(Operand.VARIABLE, operands[2]) // result
+                };
+
+            case JMP:
+                return new Operand[] {null, null, null, null, new Operand(Operand.LABEL_USE, operands[4])};
+            case LBL:
+                return new Operand[] {null, null, null, null, new Operand(Operand.LABEL_DEFINITION, operands[4])}; // label name
+
+            case NEG:
+                return new Operand[] {
+                    new Operand(Operand.CONSTANT_OR_VARIABLE, operands[0]), // value to negate
+                    null,
+                    new Operand(Operand.VARIABLE, operands[2]) // result
+                };
+
+            case MOV:
+                return new Operand[] {
+                    new Operand(Operand.CONSTANT_OR_VARIABLE, operands[0]), // source
+                    null,
+                    new Operand(Operand.VARIABLE, operands[2]) // destination
+                };
+                
+            case TST:
+                return new Operand[] {
+                    new Operand(Operand.CONSTANT_OR_VARIABLE, operands[0]),
+                    new Operand(Operand.CONSTANT_OR_VARIABLE, operands[1]),
+                    null,
+                    new Operand(Operand.CMP, operands[3]),
+                    new Operand(Operand.LABEL_USE, operands[4])};
+        
+            default:
+                throw new RuntimeException();
+        }
+    }
+
+    public static class Operand {
+        public static final int VARIABLE = 0;
+        public static final int LABEL_DEFINITION = 1;
+        public static final int LABEL_USE = 2;
+        public static final int CONSTANT = 3;
+        public static final int CMP = 4;
+        public static final int CONSTANT_OR_VARIABLE = 5;
+        public final int type;
+        private final Object value;
+
+        public Operand(int type, String value) {
+            if (type == CMP) {
+                try {
+                    this.value = Integer.parseInt(value);
+                    this.type = CMP;
+                    return;
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("Cannot give cmp operand a symbol value.");
+                }
+            }
+            if (type == CONSTANT_OR_VARIABLE) {
+                float numerical = 0;
+                try {
+                    numerical = Float.parseFloat(value);
+                } catch (NumberFormatException e) {
+                    this.value = value;
+                    this.type = VARIABLE;
+                    return;
+                }
+                this.type = CONSTANT;
+                this.value = numerical;
+            }
+            else if (type == VARIABLE || type == LABEL_DEFINITION || type == LABEL_USE) {
+                try {
+                    Float.parseFloat(value);
+                    throw new IllegalArgumentException("Cannot give a symbol a numerical value.");
+                } catch (NumberFormatException e) {
+                    this.value = value;
+                    this.type = type;
+                }
+            }
+            else if (type == CONSTANT) {
+                try {
+                    this.value = Float.parseFloat(value);
+                    this.type = CONSTANT;
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("Cannot give a constant a non-numerical value.");
+                }
+            } else {
+                throw new IllegalArgumentException("Type out of range.");
+            }
+        }
+
+        public String getSymbol() {
+            return (String)value;
+        }
+        
+        public float getConstant() {
+            return (Float)value;
+        }
+
+        public int getCmp() {
+            return (Integer)value;
+        }
+
+        @Override
+        public String toString() {
+            return value.toString();
         }
     }
 }

@@ -122,6 +122,18 @@ public class Instruction {
         public static final int LOD = 7;
         public static final int STO = 8;
         public static final int HLT = 9;
+
+        public static int fromAtomOpcode(Atom.Opcode opcode) {
+            switch (opcode) {
+                case ADD: return Opcode.ADD;
+                case SUB: return Opcode.SUB;
+                case MUL: return Opcode.MUL;
+                case DIV: return Opcode.DIV;
+                case JMP: return Opcode.JMP;
+                default:
+                    throw new IllegalArgumentException("Cannot be directly mapped.");
+            }
+        }
     }
 
     public static class Cmp {

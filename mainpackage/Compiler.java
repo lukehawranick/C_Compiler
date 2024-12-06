@@ -9,6 +9,8 @@ package mainpackage;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * -s <source_file>
@@ -63,8 +65,11 @@ public class Compiler {
         try {
             Scanner s = new Scanner(SourceStream.fromFile(sourceFile));
             if (tokenDest == null) {
-                Parser p = new Parser(s, System.out::println); // TODO: atomDest
-                p.parse();
+                List<Atom> atoms = new LinkedList<>();
+                new Parser(s, atoms::add).parse();
+
+                CodeGen gen = new CodeGen(atoms, System.out::println);
+                gen.generate();
             } else {
                 try (FileWriter fw = new FileWriter(tokenDest)) {
                     while (s.hasNext())
