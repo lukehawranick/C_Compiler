@@ -78,6 +78,10 @@ public class CodeGen {
             pc += 4;
         }
 
+        int firstInstructionAddress = symbols.getMemConsumed();
+        for (HashMap.Entry<String, Integer> e : symbols.labelTable.entrySet())
+            e.setValue(e.getValue() + firstInstructionAddress);
+
         return symbols;
     }
 
@@ -92,7 +96,7 @@ public class CodeGen {
         output(symbols.getBeginningOfMemory());
 
         //Setting counting variables
-        int programCounter = 0;  //increments by 4
+        int programCounter = symbols.getMemConsumed();  //increments by 4
 
         //iterating through the atom list
         for (Atom atom : input) {
