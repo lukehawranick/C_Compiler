@@ -531,6 +531,8 @@ public class CodeGen {
                     //adding memory location
                     mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
 
+		    break;
+
                 case LBL: //handled in generateLabelTable()
                     //increment program counter
                     programCounter += 4;
@@ -538,8 +540,39 @@ public class CodeGen {
                     break;
                 
                 case MOV:
+		     /*
+                     * Handling the initial Load Instruction
+                     */
 
-                break;
+                     //adding opcode
+                     loadInstruction.append("0111");
+
+                     //adding comp
+                     loadInstruction.append("0000");
+
+                     //adding register
+                     loadInstruction.append(Integer.parseInt(atom.getOperand(0)));
+
+                     //adding memory location
+                     loadInstruction.append(Integer.parseInt(atom.getOperand(1)));
+                     
+                     /*
+                     * Handling the Store instruction
+                     */
+
+                     //adding opcode
+                     storeInstruction.append("1000");
+
+                     //adding comp
+                     storeInstruction.append("0000");
+
+                     //adding register
+                     storeInstruction.append(Integer.parseInt(atom.getOperand(0)));
+
+                     //adding memory location
+                     storeInstruction.append(Integer.parseInt(atom.getOperand(1)));
+		
+		     break;
 
                 default:
                     throw new RuntimeException("Unknown Atom");
