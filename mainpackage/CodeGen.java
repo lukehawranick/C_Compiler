@@ -42,10 +42,10 @@ public class CodeGen {
         /**
      * @brief Serves as our first pass, filling in the label table
      */
-    public HashMap<String, Integer> generateLabelTable() {
+    public HashMap<Integer, Integer> generateLabelTable() {
         //initializing label table
-        HashMap<String, Integer> labelTable = new HashMap<String, Integer>();
-
+        HashMap<Integer, Integer> labelTable = new HashMap<Integer, Integer>();
+        
         //program counter
         int pc = 0;
 
@@ -58,9 +58,9 @@ public class CodeGen {
                 //if label, add to table and increment counting variables
                 case LBL:
                     //add entry to table
-                    labelTable.put("L" + label + "", pc);
+                    labelTable.put(label, pc);
 
-                    //increment label counter for naming
+                    //increment label counter
                     label++;
 
                     //increment program counter by 4 bytes (size of instructions)
@@ -82,13 +82,22 @@ public class CodeGen {
      * @throws CodeGenException If Invalid Input
      */
     public void generate() {
+
+        //getting the Label Table
+        HashMap<Integer, Integer> labelTable = generateLabelTable();
+
+        //Setting counting variables
+        int programCounter = 0;  //increments by 4
+
+        int labelCounter = 1;    //increments by 1
+
+        //setting stringbuilders for the instruction types
         StringBuilder loadInstruction = new StringBuilder();
         StringBuilder mainInstruction = new StringBuilder();
         StringBuilder storeInstruction = new StringBuilder();
-        for (Atom atom : input.atomList) {
 
-            //getting Label Table
-            HashMap<String, Integer> LableTable = generateLabelTable();
+        //iterating through the atom list
+        for (Atom atom : input.atomList) {
 
             switch (atom.opcode) {
                 case ADD:
@@ -107,6 +116,9 @@ public class CodeGen {
 
                     //adding memory location
 
+                    //increment program counter
+                    programCounter += 4;
+
                     /*
                     * Handling the main Add instruction 
                     */
@@ -118,10 +130,13 @@ public class CodeGen {
                     mainInstruction.append("0000");
 
                     //adding register
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
+                    mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(0))));
 
                     //adding memory location
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
+                    mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(1))));
+
+                    //increment program counter
+                    programCounter += 4;
 
                     /*
                     * Handling the final Store instruction
@@ -136,6 +151,9 @@ public class CodeGen {
                     //adding register
 
                     //adding memory location
+
+                    //increment program counter
+                    programCounter += 4;
 
                 case SUB:
                     /*
@@ -153,6 +171,9 @@ public class CodeGen {
 
                     //adding memory location
 
+                    //increment program counter
+                    programCounter += 4;
+
                     /*
                     * Handling the main Sub instruction 
                     */
@@ -164,10 +185,13 @@ public class CodeGen {
                     mainInstruction.append("0000");
 
                     //adding register
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
+                    mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(0))));
 
                     //adding memory location
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
+                    mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(1))));
+
+                    //increment program counter
+                    programCounter += 4;
 
                     /*
                     * Handling the final Store instruction
@@ -182,6 +206,9 @@ public class CodeGen {
                     //adding register
 
                     //adding memory location
+
+                    //increment program counter
+                    programCounter += 4;
 
                 case MUL:
                     /*
@@ -199,6 +226,9 @@ public class CodeGen {
 
                     //adding memory location
 
+                    //increment program counter
+                    programCounter += 4;
+
                     /*
                     * Handling the main Mul instruction 
                     */
@@ -210,10 +240,13 @@ public class CodeGen {
                     mainInstruction.append("0000");
 
                     //adding register
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
+                    mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(0))));
 
                     //adding memory location
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
+                    mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(1))));
+
+                    //increment program counter
+                    programCounter += 4;
 
                     /*
                     * Handling the final Store instruction
@@ -228,6 +261,9 @@ public class CodeGen {
                     //adding register
 
                     //adding memory location
+
+                    //increment program counter
+                    programCounter += 4;
 
                 case DIV:
                     /*
@@ -245,6 +281,9 @@ public class CodeGen {
 
                     //adding memory location
 
+                    //increment program counter
+                    programCounter += 4;
+
                     /*
                     * Handling the main Add instruction 
                     */
@@ -256,10 +295,13 @@ public class CodeGen {
                     mainInstruction.append("0000");
 
                     //adding register
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(0)));
+                    mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(0))));
 
                     //adding memory location
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
+                    mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(1))));
+
+                    //increment program counter
+                    programCounter += 4;
 
                     /*
                     * Handling the final Store instruction
@@ -275,6 +317,9 @@ public class CodeGen {
 
                     //adding memory location
 
+                    //increment program counter
+                    programCounter += 4;
+
                 case JMP:
                     //adding opcode
                     mainInstruction.append("0101");
@@ -286,16 +331,24 @@ public class CodeGen {
                     mainInstruction.append("0000");
 
                     //adding memory location
-                        //this refers to where we jump to, which is a label
-                        //I don't know how we are handling that for now
+                    mainInstruction.append(Integer.toBinaryString(labelTable.get(labelCounter)));
+
+                    //increment lable counter
+                    labelCounter++;
+
+                    //increment program counter
+                    programCounter += 4;
 
                 case TST:
                     /*
                     * Handles initial Load instruction(s)
                     */
 
+                    //increment program counter
+                    programCounter += 4;
+
                     /*
-                    * Handling main Tst instruction
+                    * Handling main Cmp instruction
                     */
 
                     //adding opcode
@@ -329,23 +382,30 @@ public class CodeGen {
                     }
 
                     //adding register
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(1)));
+                    mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(1))));
 
                     //adding memory location
-                    mainInstruction.append(Integer.parseInt(atom.getOperand(2)));
+                    mainInstruction.append(Integer.toBinaryString(Integer.parseInt(atom.getOperand(2))));
+
+                    //increment program counter
+                    programCounter += 4;
+
+                    /*
+                    * Handles final Store instruction(s)
+                    */
+
+                    //increment program counter
+                    programCounter += 4;
 
                 case NEG:
 
-                case LBL:
+                case LBL: //handled in generateLabelTable()
+                    //increment program counter
+                    programCounter += 4;
+
+                    break;
                 
                 case MOV:
-
-                //case LOD:
-
-                //case STO:  Which case above do these three correspond with?
-                                //it isn't that they correspond, these are instructions that
-                                //we need to encode that aren't part of the atoms
-                //case HLT:
 
                 default:
                     // Insert Exception
