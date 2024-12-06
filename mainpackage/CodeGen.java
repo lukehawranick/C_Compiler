@@ -288,6 +288,16 @@ public class CodeGen {
 
             throw new RuntimeException();
         }
+
+        public int getTypeOfSymbol(int address) {
+            if (variableTable.containsValue(address))
+                return Atom.Operand.VARIABLE;
+            if (constantTable.containsValue(address))
+                return Atom.Operand.CONSTANT;
+            if (labelTable.containsValue(address))
+                return Atom.Operand.LABEL_DEFINITION;
+            throw new IllegalArgumentException();
+        }
     }
 }
 

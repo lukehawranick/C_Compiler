@@ -116,7 +116,11 @@ public class Instruction {
         sb.append(getMode()).append(' ');
         sb.append(Cmp.toString(getCmp())).append(' ');
         sb.append("R" + getR() + ' ');
-        sb.append("A").append(getA()).append('[').append(symbols.getSymbolOf(getA())).append(']');
+        sb.append("A").append(getA()).append('[').append(symbols.getSymbolOf(getA()));
+        if (symbols.getTypeOfSymbol(getA()) == Atom.Operand.CONSTANT)
+            sb.append('<').append(symbols.constantTable.entrySet().stream()
+                .filter((e) -> e.getValue() == getA()).findFirst().get().getKey()).append('>');
+        sb.append(']');
 
         return sb.toString();
     }
