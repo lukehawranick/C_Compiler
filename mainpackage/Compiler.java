@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 
 /**
  * -s <source_file>
@@ -75,12 +76,17 @@ public class Compiler {
                 CodeGen gen = new CodeGen(atoms, code::add);
                 gen.generate();
                 CodeGen.Symbols sym = gen.getSymbols();
+                for (Entry<String, Integer> e : sym.labelTable.entrySet())
+                    System.out.println(e.getValue() + ": " + e.getKey());
+                // Print constants and variables
                 for (int j = 0; j < gen.getCodeSegBeginning(); j++) {
-                    System.out.printf("%d: %s (%s)\n", pc, Float.intBitsToFloat(code.get(j)), sym.getSymbolOf(pc));
+                    System.out.printf("%d\t \t%s (%s)\n", pc, Float.intBitsToFloat(code.get(j)), sym.getSymbolOf(pc));
                     pc += 4;
                 }
+                // Print instructions
                 for (int j = gen.getCodeSegBeginning(); j < code.size(); j++) {
-                    System.out.printf("%d: %s\n", pc,
+                    System.out.printf("%d\t %s\t%s\n", pc,
+                        sym.labelTable.containsValue(pc) ? sym.getRawSymbolOf(pc) + ": " : "",
                         new Instruction(code.get(j)).toStringPrettyPlus(sym));
                     pc += 4;
                 }

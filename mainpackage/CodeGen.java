@@ -71,24 +71,34 @@ public class CodeGen {
                     case Operand.CONSTANT:
                         if (symbols.constantTable.putIfAbsent(o.getConstant(), memoryCounter) == null)
                             memoryCounter += 4;
-                        pc += 4;
                         break;
                     case Operand.VARIABLE:
                         if (symbols.variableTable.putIfAbsent(o.getSymbol(), memoryCounter) == null)
                             memoryCounter += 4;
-                        pc += 4;
                         break;
                     case Operand.LABEL_DEFINITION:
                         symbols.labelTable.putIfAbsent(o.getSymbol(), pc);
                         break;
-                    default:
-                        pc += 4;
-                        break;
+                    default: break;
                 }
+            }
+
+            // Inc pc
+            switch (atom.opcode) {
+                case LBL: break; // Dont inc pc cause this generates no instructions
+                case ADD: pc += 4 * 3; break;
+                case SUB: pc += 4 * 3; break;
+                case MUL: pc += 4 * 3; break;
+                case DIV: pc += 4 * 3; break;
+                case JMP: pc += 4 * 2; break;
+                case NEG: pc += 4 * 4; break;
+                case TST: pc += 4 * 3; break;
+                case MOV: pc += 4 * 2; break;
+                default: throw new RuntimeException();
             }
         }
 
-        int firstInstructionAddress = symbols.getMemConsumed();
+        int firstInstructionAddress = symbols.getMemConsumed() * 4;
         for (HashMap.Entry<String, Integer> e : symbols.labelTable.entrySet())
             e.setValue(e.getValue() + firstInstructionAddress);
 
@@ -239,7 +249,8 @@ public class CodeGen {
         public final HashMap<String, Integer> variableTable = new HashMap<>();
 
         /**
-         * Returns the memory that is consumed by constants and variables.
+         * Returns the memory that is consumed by constants and variables
+         * in number of integers consumed (4 bytes / intenger).
          */
         public int getMemConsumed() {
             return constantTable.size() + variableTable.size();
@@ -285,6 +296,24 @@ public class CodeGen {
             o = labelTable.entrySet().stream().filter((e) -> e.getValue() == address).findFirst();
             if (o.isPresent())
                 return "LABEL<" + o.get().getKey() + ">";
+
+            throw new RuntimeException();
+        }
+
+        public String getRawSymbolOf(int address) {
+            Optional<Entry<String, Integer>> o =
+                variableTable.entrySet().stream().filter((e) -> e.getValue() == address).findFirst();
+            if (o.isPresent())
+                return o.get().getKey();
+            
+            Optional<Entry<Float, Integer>> o1 =
+                constantTable.entrySet().stream().filter((e) -> e.getValue() == address).findFirst();
+            if (o1.isPresent())
+                return "CONSTANT";
+
+            o = labelTable.entrySet().stream().filter((e) -> e.getValue() == address).findFirst();
+            if (o.isPresent())
+                return o.get().getKey();
 
             throw new RuntimeException();
         }
