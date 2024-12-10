@@ -7,8 +7,9 @@ package mainpackage;
  * @date 09/27/24
  */
 
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -68,33 +69,37 @@ public class Compiler {
 
         try {
             Scanner s = new Scanner(SourceStream.fromFile(sourceFile));
-            if (tokenDest == null) {
-                List<Atom> atoms = new LinkedList<>();
-                new Parser(s, atoms::add).parse();
-                for (Atom a : atoms) System.out.println(a);
-                List<Integer> code = new ArrayList<>();
-                CodeGen gen = new CodeGen(atoms, code::add);
-                gen.generate();
-                CodeGen.Symbols sym = gen.getSymbols();
-                for (Entry<String, Integer> e : sym.labelTable.entrySet())
-                    System.out.println(e.getValue() + ": " + e.getKey());
-                // Print constants and variables
-                for (int j = 0; j < gen.getCodeSegBeginning(); j++) {
-                    System.out.printf("%d\t \t%s (%s)\n", pc, Float.intBitsToFloat(code.get(j)), sym.getSymbolOf(pc));
-                    pc += 4;
-                }
-                // Print instructions
-                for (int j = gen.getCodeSegBeginning(); j < code.size(); j++) {
-                    System.out.printf("%d\t %s\t%s\n", pc,
-                        sym.labelTable.containsValue(pc) ? sym.getRawSymbolOf(pc) + ": " : "",
-                        new Instruction(code.get(j)).toStringPrettyPlus(sym));
-                    pc += 4;
-                }
-            } else {
-                try (FileWriter fw = new FileWriter(tokenDest)) {
-                    while (s.hasNext())
-                        fw.append(s.next().toString() + "\n");
-                }
+            List<Atom> atoms = new LinkedList<>();
+            new Parser(s, atoms::add).parse();
+            for (Atom a : atoms) System.out.println(a);
+            List<Integer> code = new ArrayList<>();
+            CodeGen gen = new CodeGen(atoms, code::add);
+            gen.generate();
+            CodeGen.Symbols sym = gen.getSymbols();
+            // Print labels
+            System.out.println("----- LABELS -----");
+            for (Entry<String, Integer> e : sym.labelTable.entrySet())
+                System.out.println(e.getValue() + "\t \t" + e.getKey());
+            // Print constants and variables
+            System.out.println("----- VARIABLES -----");
+            for (int j = 0; j < gen.getCodeSegBeginning(); j++) {
+                System.out.printf("%d\t \t%s (%s)\n", pc, Float.intBitsToFloat(code.get(j)), sym.getSymbolOf(pc));
+                pc += 4;
+            }
+            // Print instructions
+            System.out.println("----- INSTRUCTIONS -----");
+            for (int j = gen.getCodeSegBeginning(); j < code.size(); j++) {
+                System.out.printf("%d\t %s\t%s\n", pc,
+                    sym.labelTable.containsValue(pc) ? sym.getRawSymbolOf(pc) + ": " : "",
+                    new Instruction(code.get(j)).toStringPrettyPlus(sym));
+                pc += 4;
+            }
+
+            try (FileOutputStream fos = new FileOutputStream("output.bin")) {
+                ByteBuffer buf = ByteBuffer.allocate(code.size() * 4);
+                for (int c : code)
+                    buf.putInt(c);
+                fos.write(buf.array());
             }
         } catch (NullPointerException | IOException e) {
             e.printStackTrace();
