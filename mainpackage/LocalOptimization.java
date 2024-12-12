@@ -1,25 +1,24 @@
 package mainpackage;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import mainpackage.CodeGen.Symbols;
+
 public class LocalOptimization {
-    private final List<Integer> input;
-    private final List<Integer> output;
-
-    public LocalOptimization(List<Integer> instructions) {
-        input = instructions;
-        output = Optimize(input);
-    }
-
-    private List<Integer> Optimize(List<Integer> input) {
-        List<Instruction> instructions = (List<Instruction>)input.stream().map((i) -> { return new Instruction(i); }).collect(Collectors.toList());
+    public static OptimizeResult Optimize(List<Integer> input, Symbols inputSymbols) {
+        List<Instruction> instr = (List<Instruction>)input.stream().map((i) -> { return new Instruction(i); }).collect(Collectors.toList());
         // TODO: Optimize and return new machine code
-        return null;
+        return new OptimizeResult(null, null);
     }
 
-    public List<Integer> getOutput() {
-        return Collections.unmodifiableList(output);
+    public static class OptimizeResult {
+        public final List<Integer> output;
+        public final Symbols outputSymbols;
+
+        public OptimizeResult(List<Integer> output, Symbols outputSymbols) {
+            this.output = output;
+            this.outputSymbols = outputSymbols;
+        }
     }
 }
