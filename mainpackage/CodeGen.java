@@ -73,11 +73,11 @@ public class CodeGen {
                 switch (o.type) {
                     case Operand.CONSTANT:
                         if (symbols.constantTable.putIfAbsent(o.getConstant(), memoryCounter) == null)
-                            memoryCounter += 4;
+                            memoryCounter += 1;
                         break;
                     case Operand.VARIABLE:
                         if (symbols.variableTable.putIfAbsent(o.getSymbol(), memoryCounter) == null)
-                            memoryCounter += 4;
+                            memoryCounter += 1;
                         break;
                     case Operand.LABEL_DEFINITION:
                         symbols.labelTable.putIfAbsent(o.getSymbol(), pc);
@@ -89,19 +89,19 @@ public class CodeGen {
             // Inc pc
             switch (atom.opcode) {
                 case LBL: break; // Dont inc pc cause this generates no instructions
-                case ADD: pc += 4 * 3; break;
-                case SUB: pc += 4 * 3; break;
-                case MUL: pc += 4 * 3; break;
-                case DIV: pc += 4 * 3; break;
-                case JMP: pc += 4 * 2; break;
-                case NEG: pc += 4 * 4; break;
-                case TST: pc += 4 * 3; break;
-                case MOV: pc += 4 * 2; break;
+                case ADD: pc += 3; break;
+                case SUB: pc += 3; break;
+                case MUL: pc += 3; break;
+                case DIV: pc += 3; break;
+                case JMP: pc += 2; break;
+                case NEG: pc += 4; break;
+                case TST: pc += 3; break;
+                case MOV: pc += 2; break;
                 default: throw new RuntimeException();
             }
         }
 
-        int firstInstructionAddress = symbols.getMemConsumed() * 4;
+        int firstInstructionAddress = symbols.getMemConsumed();
         // Add base addresses to labelTable
         for (HashMap.Entry<String, Integer> e : symbols.labelTable.entrySet())
             e.setValue(e.getValue() + firstInstructionAddress);
@@ -138,7 +138,7 @@ public class CodeGen {
                         );
 
                     //increment program counter
-                    programCounter += 12;
+                    programCounter += 3;
                     break;
                 case JMP:
                     output(
@@ -147,7 +147,7 @@ public class CodeGen {
                         );
 
                     //increment program counter
-                    programCounter += 8;
+                    programCounter += 2;
                     break;
 
                     // I think my (Koren) correction above works, but if it doesn't use this
@@ -167,7 +167,7 @@ public class CodeGen {
                         );
 
                     //increment program counter
-                    programCounter += 12;
+                    programCounter += 3;
                     break;
 
                 case NEG:
@@ -178,7 +178,7 @@ public class CodeGen {
                         Instruction.create(Opcode.STO, 0, REG, symbols.opToAddr(atom.getOperand(2))) // Store result
                         );
 
-                    programCounter += 16;
+                    programCounter += 4;
 		            break;
 
                 case LBL: //handled in generateLabelTable()
@@ -191,7 +191,7 @@ public class CodeGen {
                         Instruction.create(Opcode.STO, 0, REG, symbols.opToAddr(atom.getOperand(2))) // Handling the Store instruction
                         );
 
-                    programCounter += 8;
+                    programCounter += 2;
 		            break;
 
                 default:

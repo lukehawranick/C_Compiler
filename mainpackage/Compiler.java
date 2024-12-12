@@ -84,7 +84,7 @@ public class Compiler {
             System.out.println("----- VARIABLES -----");
             for (int j = 0; j < gen.getCodeSegBeginning(); j++) {
                 System.out.printf("%d\t \t%s (%s)\n", pc, Float.intBitsToFloat(code.get(j)), sym.getSymbolOf(pc));
-                pc += 4;
+                pc++;
             }
             // Print instructions
             System.out.println("----- INSTRUCTIONS -----");
@@ -92,7 +92,7 @@ public class Compiler {
                 System.out.printf("%d\t %s\t%s\n", pc,
                     sym.labelTable.containsValue(pc) ? sym.getRawSymbolOf(pc) + ": " : "",
                     new Instruction(code.get(j)).toStringPrettyPlus(sym));
-                pc += 4;
+                pc++;
             }
 
             try (FileOutputStream fos = new FileOutputStream("output.bin")) {
