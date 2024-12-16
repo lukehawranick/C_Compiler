@@ -68,14 +68,21 @@ public class Compiler {
         System.out.println("Starting...");
 
         try {
+            // Scan Source Code
             Scanner s = new Scanner(SourceStream.fromFile(sourceFile));
+            // Parse Tokens
             List<Atom> atoms = new LinkedList<>();
             new Parser(s, atoms::add).parse();
             for (Atom a : atoms) System.out.println(a);
+            // TODO: Global Optimization
+            // Generate Machine Code
             List<Integer> code = new ArrayList<>();
             CodeGen gen = new CodeGen(atoms, code::add);
             gen.generate();
-            CodeGen.Symbols sym = gen.getSymbols();
+            // Local Optimization
+            LocalOptimization.OptimizeResult optRes = LocalOptimization.Optimize(code, gen.getSymbols());
+            code = optRes.output;
+            CodeGen.Symbols sym = optRes.outputSymbols;
             // Print labels
             System.out.println("----- LABELS -----");
             for (Entry<String, Integer> e : sym.labelTable.entrySet())

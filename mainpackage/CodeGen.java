@@ -326,7 +326,7 @@ public class CodeGen {
             if (o.isPresent())
                 return "LABEL<" + o.get().getKey() + ">";
 
-            throw new RuntimeException();
+            throw new RuntimeException("Symbol does not ");
         }
 
         public String getRawSymbolOf(int address) {
@@ -361,6 +361,15 @@ public class CodeGen {
             if (labelTable.containsValue(address))
                 return Atom.Operand.LABEL_DEFINITION;
             throw new IllegalArgumentException();
+        }
+
+        public Symbols Duplicate() {
+            Symbols toReturn = new Symbols();
+            constantTable.entrySet().forEach((e) -> toReturn.constantTable.put(e.getKey(), e.getValue()));
+            variableTable.entrySet().forEach((e) -> toReturn.variableTable.put(e.getKey(), e.getValue()));
+            labelTable.entrySet().forEach((e) -> toReturn.labelTable.put(e.getKey(), e.getValue()));
+            
+            return toReturn;
         }
     }
 }
