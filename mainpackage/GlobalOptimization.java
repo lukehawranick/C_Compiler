@@ -1,7 +1,9 @@
 package mainpackage;
 
+ import java.util.ArrayList;
  import java.util.Collections;
  import java.util.List;
+ import java.util.Iterator;
 
 public class GlobalOptimization{
 	private final List<Atom> input;
@@ -12,23 +14,29 @@ public class GlobalOptimization{
 		output = optimize(input);
 	}
 
-	private List<Atom> optimize (List<Atom> input) {
-		for (int i = 0; i < input.size(); i++) {  //for each atom in list of atom
-			Atom a = input.get(i);
-			if (a.getOperand(0) == JMP) {  //if atom is a jmp atom, not sure how to code this
-				while (i + 1 < input.size()) { //check each atom in list after jmp atom until lbl atom is found
-					Atom nextAtom = input.get(i + 1);
-					if (nextAtom.getOperand(1) != LBL) {// if next atom is not a lbl atom, not sure how to code this
-						input.remove(i + 1);//remove that atom from the list
-					}  
-					else {
-						break; //get out of while loop
-					}
-				}
-			}
-		}
-		return input;
-	}
+ private List<Atom> optimize(List<Atom> input) {
+        List<Atom> optimizedList = new ArrayList<>(input); // Create a modifiable copy of the list
+        Iterator<Atom> iterator = optimizedList.iterator();
+        int index = 0;
+
+        while (iterator.hasNext()) {
+            Atom atom = iterator.next();
+            if (atom.getOperand(0).equals("JMP")) { // Ensure proper comparison for "JMP"
+                index++;
+                while (index < optimizedList.size()) {
+                    Atom nextAtom = optimizedList.get(index);
+                    if (!nextAtom.getOperand(1).equals("LBL")) { // Ensure proper comparison for "LBL"
+                        iterator.remove(); // Safe removal while iterating
+                    } else {
+                        break; // Exit the loop when an LBL is found
+                    }
+                }
+            } else {
+                index++;
+            }
+        }
+        return optimizedList;
+    }
 
 	public List<Atom> getOutput() {
 		return Collections.unmodifiableList(output);
