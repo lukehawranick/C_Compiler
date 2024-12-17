@@ -75,6 +75,8 @@ public class Compiler {
             new Parser(s, atoms::add).parse();
             for (Atom a : atoms) System.out.println(a);
             // TODO: Global Optimization
+            List<Atom> GoptRes = GlobalOptimization.optimize(atoms);
+            for (Atom a: GoptRes) System.out.println(a); 
             // Generate Machine Code
             List<Integer> code = new ArrayList<>();
             CodeGen gen = new CodeGen(atoms, code::add);
