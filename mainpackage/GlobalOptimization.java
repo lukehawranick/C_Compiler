@@ -16,17 +16,16 @@ public class GlobalOptimization{
 
  public static List<Atom> optimize(List<Atom> input) {
         List<Atom> optimizedList = new ArrayList<>(input); // Create a modifiable copy of the list
-        Iterator<Atom> iterator = optimizedList.iterator();
         int index = 0;
 
-        while (iterator.hasNext()) {
-            Atom atom = iterator.next();
-            if (atom.opcode.equals("JMP")) { // Ensure proper comparison for "JMP"
+        while (index < optimizedList.size()) {
+            Atom atom = optimizedList.get(index);
+            if (atom.opcode.toString().equals("JMP")) { // Ensure proper comparison for "JMP"
                 index++;
                 while (index < optimizedList.size()) {
                     Atom nextAtom = optimizedList.get(index);
-                    if (!nextAtom.opcode.equals("LBL")) { // Ensure proper comparison for "LBL"
-                        iterator.remove(); // Safe removal while iterating
+                    if (!nextAtom.opcode.toString().equals("LBL")) { // Ensure proper comparison for "LBL"
+                        optimizedList.remove(nextAtom); // Safe removal while iterating
                     } else {
                         break; // Exit the loop when an LBL is found
                     }
