@@ -3,7 +3,7 @@ package mainpackage;
  import java.util.ArrayList;
  import java.util.Collections;
  import java.util.List;
- import java.util.Iterator;
+
 
 public class GlobalOptimization{
 	private final List<Atom> input;
