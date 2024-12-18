@@ -1,3 +1,16 @@
+file:///C:/Users/Mallory%20Anderson/Documents/2024%20-%202025/CS%20410/Compiler/C_Compiler/mainpackage/Compiler.java
+### java.util.NoSuchElementException: next on empty iterator
+
+occurred in the presentation compiler.
+
+presentation compiler configuration:
+
+
+action parameters:
+offset: 791
+uri: file:///C:/Users/Mallory%20Anderson/Documents/2024%20-%202025/CS%20410/Compiler/C_Compiler/mainpackage/Compiler.java
+text:
+```scala
 package mainpackage;
 /**
  * @file Compiler.java
@@ -8,16 +21,14 @@ package mainpackage;
  */
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 
 /**
  * -s <source_file>
@@ -26,7 +37,7 @@ import java.util.List;
  */
 public class Compiler {
     private static final String SOURCE_FILE_OPTION = "-s";
-    private static final String TOKEN_DEST_FILE_OPTION = "-t";
+    private static final String TOKEN_DEST_FILE_OPTION = @@"-t";
     private static final String ATOM_DEST_FILE_OPTION = "-a";
 
     private static int pc = 0;
@@ -75,129 +86,66 @@ public class Compiler {
             // Collect User Input
             BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
             String input = "";
+            System.out.println("Command Options Are:");
+            System.out.println("\tFrontend: frontend <inputFile> <outputFile>");
+            System.out.println("\tBackend: backend <inputFile> <outputFile>");
+            System.out.println("\tVirtual Machine: virtualmachine <inputFile>");
+            System.out.println("\tStop System: stop");
+            System.out.println("Please Enter Command In Above Format:");
 
             // Read Input Until "stop"
             while(!input.equalsIgnoreCase("stop")) {
-                input = "";
-                System.out.println("Command Options Are:\n");
-                System.out.println("\tFrontend: \t\tfrontend <inputFile> <outputFile> <optimize>");
-                System.out.println("\tBackend: \t\tbackend  <inputFile> <outputFile> <optimize>");
-                System.out.println("\tVirtual Machine: \tvirtualmachine <inputFile> mini vm");
-                System.out.println("\tStop System: \t\tstop\n");
-                System.out.println("Please Enter Command In Above Format.");
-                System.out.println("Enter \"optimize\" in <optimize> for optional optimization. Enter \"no\" otherwise.");
                 input = in.readLine().trim();
                 String[] parts = input.split("\\s+");
 
                 // Not Enough Arguments
-                if (parts.length < 4) {
-                    System.out.println("Invalid Command.\n\n");
+                if (parts.length < 3) {
+                    System.out.println("Invalid Command.");
                 }
 
                 // Enough Arguments
                 else {
                     // Split Input Into Different Parts
                     String command = parts[0];
-                    String inputString = parts[1];
-                    File inputFile = new File(inputString);
-                    String outputString = parts[2];
-                    File outputFile = new File(outputString);
-                    String optimize = parts[3];
+                    String inputFile = parts[1];
+                    String outputFile = parts[2];
                     int frontendDone = 0;
                     int backendDone = 0;
-                    List<Atom> atoms = new LinkedList<>();
 
                     switch(command.toLowerCase()) {
                         case "frontend":
                             // Make Sure Input File Exists
-                            if (inputFile.exists()) {
-                                // Scan Source Code
-                                Scanner s = new Scanner(SourceStream.fromFile(inputString));
-
-                                // Generate Atoms
-                                new Parser(s, atoms::add).parse();
-
-                                // Optional Global Optimization
-                                if (optimize.equals("optimize")) {
-                                    atoms = GlobalOptimization.optimize(atoms);
-                                }
-
-                                // Output Atoms
-                                try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputString))) {
-                                    for (Atom a : atoms) {
-                                        writer.write(a.toString());
-                                        writer.newLine();
-                                    }
-                                }
-                                catch (IOException e) {}
-
-                                // Mark Completion of Frontend
-                                frontendDone = 1;
-                                System.out.println("Frontend complete!\n\n");
-                            }
     
-                            // Input File Does Not Exist
-                            else {
-                                System.out.println("Input file does not exist.\n\n");
-                            }
-                            break;
+    
+                            frontendDone = 1;
     
                         case "backend":
                             // Must Run Frontend First
                             if (frontendDone != 1) {
-                                System.out.println("Must run frontend command first.\n\n");
+                                System.out.println("Must run frontend command first.");
                             }
     
                             // Run Backend
                             else {
                                 // Make Sure Input File Exists
-                                if (inputFile.exists()) {
-                                    // Generate Instructions
-                                    List<Integer> code = new ArrayList<>();
-                                    CodeGen gen = new CodeGen(atoms, code::add);
-                                    gen.generate();
     
-                                    // Optional Local Optimization
-                                    if (optimize.equals("optimize")) {
-                                        LocalOptimization.OptimizeResult optRes = LocalOptimization.Optimize(code, gen.getSymbols());
-                                        code = optRes.output;
-                                    }
     
-                                    // Output Instructions
-                                    try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputString))) {
-                                        for (Integer instruction : code) {
-                                            writer.write(instruction.toString());
-                                            writer.newLine();
-                                        }
-                                    }
-                                    catch (IOException e) {}
-    
-                                    // Mark Completion of Backend
-                                    backendDone = 1;
-                                    System.out.println("Backend complete!\n\n");
-                                }
-        
-                                // Input File Does Not Exist
-                                else {
-                                    System.out.println("Input file does not exist.\n\n");
-                                }
+                                backendDone = 1;
                             }
-                            break;
     
                         case "virtualmachine":
                             // Must Run Backend First
                             if (backendDone != 1) {
-                                System.out.println("Must run backend command first.\n\n");
+                                System.out.println("Must run backend command first.");
                             }
     
                             // Run Virtual Machine
                             else {
     
                             }
-                            break;
     
                         default:
-                            System.out.println("Invalid Command.\n\n");
+                            System.out.println("Invalid Command.");
                             break;
                     }
                 }
@@ -220,24 +168,24 @@ public class Compiler {
             LocalOptimization.OptimizeResult optRes = LocalOptimization.Optimize(code, gen.getSymbols());
             code = optRes.output;
             CodeGen.Symbols sym = optRes.outputSymbols;
-            // // Print labels
-            // System.out.println("----- LABELS -----");
-            // for (Entry<String, Integer> e : sym.labelTable.entrySet())
-            //     System.out.println(e.getValue() + "\t \t" + e.getKey());
-            // // Print constants and variables
-            // System.out.println("----- VARIABLES -----");
-            // for (int j = 0; j < gen.getCodeSegBeginning(); j++) {
-            //     System.out.printf("%d\t \t%s (%s)\n", pc, Float.intBitsToFloat(code.get(j)), sym.getSymbolOf(pc));
-            //     pc++;
-            // }
-            // // Print instructions
-            // System.out.println("----- INSTRUCTIONS -----");
-            // for (int j = gen.getCodeSegBeginning(); j < code.size(); j++) {
-            //     System.out.printf("%d\t %s\t%s\n", pc,
-            //         sym.labelTable.containsValue(pc) ? sym.getRawSymbolOf(pc) + ": " : "",
-            //         new Instruction(code.get(j)).toStringPrettyPlus(sym));
-            //     pc++;
-            // }
+            // Print labels
+            System.out.println("----- LABELS -----");
+            for (Entry<String, Integer> e : sym.labelTable.entrySet())
+                System.out.println(e.getValue() + "\t \t" + e.getKey());
+            // Print constants and variables
+            System.out.println("----- VARIABLES -----");
+            for (int j = 0; j < gen.getCodeSegBeginning(); j++) {
+                System.out.printf("%d\t \t%s (%s)\n", pc, Float.intBitsToFloat(code.get(j)), sym.getSymbolOf(pc));
+                pc++;
+            }
+            // Print instructions
+            System.out.println("----- INSTRUCTIONS -----");
+            for (int j = gen.getCodeSegBeginning(); j < code.size(); j++) {
+                System.out.printf("%d\t %s\t%s\n", pc,
+                    sym.labelTable.containsValue(pc) ? sym.getRawSymbolOf(pc) + ": " : "",
+                    new Instruction(code.get(j)).toStringPrettyPlus(sym));
+                pc++;
+            }
 
             try (FileOutputStream fos = new FileOutputStream("output.bin")) {
                 ByteBuffer buf = ByteBuffer.allocate(code.size() * 4);
@@ -260,3 +208,25 @@ public class Compiler {
         System.out.println("Finished!");
     }
 }
+
+```
+
+
+
+#### Error stacktrace:
+
+```
+scala.collection.Iterator$$anon$19.next(Iterator.scala:973)
+	scala.collection.Iterator$$anon$19.next(Iterator.scala:971)
+	scala.collection.mutable.MutationTracker$CheckedIterator.next(MutationTracker.scala:76)
+	scala.collection.IterableOps.head(Iterable.scala:222)
+	scala.collection.IterableOps.head$(Iterable.scala:222)
+	scala.collection.AbstractIterable.head(Iterable.scala:935)
+	dotty.tools.dotc.interactive.InteractiveDriver.run(InteractiveDriver.scala:164)
+	dotty.tools.pc.MetalsDriver.run(MetalsDriver.scala:45)
+	dotty.tools.pc.HoverProvider$.hover(HoverProvider.scala:40)
+	dotty.tools.pc.ScalaPresentationCompiler.hover$$anonfun$1(ScalaPresentationCompiler.scala:376)
+```
+#### Short summary: 
+
+java.util.NoSuchElementException: next on empty iterator
