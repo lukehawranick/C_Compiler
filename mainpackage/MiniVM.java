@@ -28,7 +28,6 @@ public class MiniVM {
 	private int load;
 	private int cycle;
 
-	// Mallory: Change "main" to "start" to use in same package.
 	public static void main(String[] args) throws IOException {
 		Path input = args.length > 0
 			? Paths.get(args[0])

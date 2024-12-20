@@ -18,8 +18,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import mainpackage.MiniVM;
-
 /**
  * -s <source_file>
  * -t <token_dest_file> // cannot be used with -a
@@ -193,7 +191,8 @@ public class Compiler {
     
                             // Run Virtual Machine
                             else {
-                                MiniVM(inputFile.toPath());
+                                MiniVM vm = new MiniVM(inputFile.toPath());
+                                vm.execute(true, true);
                             }
                             break;
     

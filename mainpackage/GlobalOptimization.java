@@ -1,4 +1,11 @@
 package mainpackage;
+/**
+ * @file GlobalOptimization.java
+ * @brief Main class for global optimization.
+ * @authors 
+ * @reviewers Mallory Anderson
+ * @date 12/20/2024
+ */
 
  import java.util.ArrayList;
  import java.util.Collections;

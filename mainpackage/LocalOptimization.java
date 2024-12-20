@@ -1,10 +1,16 @@
 package mainpackage;
+/**
+ * @file LocalOptimization.java
+ * @brief Main class for local optimization.
+ * @authors 
+ * @reviewers Mallory Anderson
+ * @date 12/20/2024
+ */
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
-
 import mainpackage.CodeGen.Symbols;
 import mainpackage.Instruction.Opcode;
 
