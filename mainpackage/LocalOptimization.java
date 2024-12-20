@@ -3,7 +3,7 @@ package mainpackage;
  * @file LocalOptimization.java
  * @brief Main class for local optimization.
  * @authors Garrett Williams
- * @reviewers Mallory Anderson
+ * @reviewers Sara Ackerman, Mallory Anderson, Jeremy Appiah, Luke Hawranick, Koren Spell, Gerrett Williams
  * @date 12/20/2024
  */
 
