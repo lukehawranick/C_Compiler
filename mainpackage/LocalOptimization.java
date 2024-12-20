@@ -28,7 +28,7 @@ public class LocalOptimization {
         Instruction nxt;
 
         // Find LOD followed by STO or STO followed by LOD instructions
-        for (int i = 0; i < instr.size() - 1; i++) {
+        for (int i = inputSymbols.getMemConsumed(); i < instr.size() - 1; i++) {
             cur = instr.get(i);
             nxt = instr.get(i+1);
             if (
