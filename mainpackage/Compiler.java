@@ -14,10 +14,11 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+
+import mainpackage.MiniVM;
 
 /**
  * -s <source_file>
@@ -75,6 +76,9 @@ public class Compiler {
             // Collect User Input
             BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
             String input = "";
+            int frontendDone = 0;
+            int backendDone = 0;
+            List<Atom> atoms = new LinkedList<>();
 
             // Read Input Until "stop"
             while(!input.equalsIgnoreCase("stop")) {
@@ -103,9 +107,6 @@ public class Compiler {
                     String outputString = parts[2];
                     File outputFile = new File(outputString);
                     String optimize = parts[3];
-                    int frontendDone = 0;
-                    int backendDone = 0;
-                    List<Atom> atoms = new LinkedList<>();
 
                     switch(command.toLowerCase()) {
                         case "frontend":
@@ -192,7 +193,7 @@ public class Compiler {
     
                             // Run Virtual Machine
                             else {
-    
+                                MiniVM(inputFile.toPath());
                             }
                             break;
     
@@ -203,23 +204,23 @@ public class Compiler {
                 }
             }
 
-            // Scan Source Code
-            Scanner s = new Scanner(SourceStream.fromFile(sourceFile));
-            // Parse Tokens
-            List<Atom> atoms = new LinkedList<>();
-            new Parser(s, atoms::add).parse();
-            for (Atom a : atoms) System.out.println(a);
-            // TODO: Global Optimization
-            List<Atom> GoptRes = GlobalOptimization.optimize(atoms);
-            for (Atom a: GoptRes) System.out.println(a); 
-            // Generate Machine Code
-            List<Integer> code = new ArrayList<>();
-            CodeGen gen = new CodeGen(atoms, code::add);
-            gen.generate();
-            // Local Optimization
-            LocalOptimization.OptimizeResult optRes = LocalOptimization.Optimize(code, gen.getSymbols());
-            code = optRes.output;
-            CodeGen.Symbols sym = optRes.outputSymbols;
+            // // Scan Source Code
+            // Scanner s = new Scanner(SourceStream.fromFile(sourceFile));
+            // // Parse Tokens
+            // List<Atom> atoms = new LinkedList<>();
+            // new Parser(s, atoms::add).parse();
+            // for (Atom a : atoms) System.out.println(a);
+            // // TODO: Global Optimization
+            // List<Atom> GoptRes = GlobalOptimization.optimize(atoms);
+            // for (Atom a: GoptRes) System.out.println(a); 
+            // // Generate Machine Code
+            // List<Integer> code = new ArrayList<>();
+            // CodeGen gen = new CodeGen(atoms, code::add);
+            // gen.generate();
+            // // Local Optimization
+            // LocalOptimization.OptimizeResult optRes = LocalOptimization.Optimize(code, gen.getSymbols());
+            // code = optRes.output;
+            // CodeGen.Symbols sym = optRes.outputSymbols;
             // // Print labels
             // System.out.println("----- LABELS -----");
             // for (Entry<String, Integer> e : sym.labelTable.entrySet())
@@ -240,10 +241,10 @@ public class Compiler {
             // }
 
             try (FileOutputStream fos = new FileOutputStream("output.bin")) {
-                ByteBuffer buf = ByteBuffer.allocate(code.size() * 4);
-                for (int c : code)
-                    buf.putInt(c);
-                fos.write(buf.array());
+                // ByteBuffer buf = ByteBuffer.allocate(code.size() * 4);
+                // for (int c : code)
+                //     buf.putInt(c);
+                // fos.write(buf.array());
             }
         } catch (NullPointerException | IOException e) {
             e.printStackTrace();
