@@ -43,10 +43,13 @@ public class LocalOptimization {
         // Create a duplicate symbols file to modify
         Symbols outputSymbols = inputSymbols.Duplicate();
 
+        // Remove the instructions, starting from the end
+        toRemove.sort((c, n) -> n - c);
+        for (int remove : toRemove)
+            instr.remove(remove);
+
         // For each removed instruction...
         for (int removed : toRemove) {
-            // Remove the instruction and...
-            instr.remove(removed);
             // Look at every label...
             for (Entry<String, Integer> e : outputSymbols.labelTable.entrySet()) {
                 // If it's address is after the removed instruction...
