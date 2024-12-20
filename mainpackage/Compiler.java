@@ -133,19 +133,19 @@ public class Compiler {
 
                                 // Mark Completion of Frontend
                                 frontendDone = 1;
-                                System.out.println("Frontend complete!\n\n");
+                                System.out.println("\nFrontend complete!\n\n");
                             }
     
                             // Input File Does Not Exist
                             else {
-                                System.out.println("Input file does not exist.\n\n");
+                                System.out.println("\nInput file does not exist.\n\n");
                             }
                             break;
     
                         case "backend":
                             // Must Run Frontend First
                             if (frontendDone != 1) {
-                                System.out.println("Must run frontend command first.\n\n");
+                                System.out.println("\nMust run frontend command first.\n\n");
                             }
     
                             // Run Backend
@@ -174,12 +174,12 @@ public class Compiler {
     
                                     // Mark Completion of Backend
                                     backendDone = 1;
-                                    System.out.println("Backend complete!\n\n");
+                                    System.out.println("\nBackend complete!\n\n");
                                 }
         
                                 // Input File Does Not Exist
                                 else {
-                                    System.out.println("Input file does not exist.\n\n");
+                                    System.out.println("\nInput file does not exist.\n\n");
                                 }
                             }
                             break;
@@ -187,7 +187,7 @@ public class Compiler {
                         case "virtualmachine":
                             // Must Run Backend First
                             if (backendDone != 1) {
-                                System.out.println("Must run backend command first.\n\n");
+                                System.out.println("\nMust run backend command first.\n\n");
                             }
     
                             // Run Virtual Machine
@@ -197,7 +197,7 @@ public class Compiler {
                             break;
     
                         default:
-                            System.out.println("Invalid Command.\n\n");
+                            System.out.println("\nInvalid Command.\n\n");
                             break;
                     }
                 }
