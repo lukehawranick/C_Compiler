@@ -2,8 +2,8 @@ package mainpackage;
 /**
  * @file Compiler.java
  * @brief Main class for the compiler, utilizing all completed components.
- * @authors Luke Hawranick, Garrett Williams
- * @reviewers Koren Spell, Mallory Anderson
+ * @authors Mallory Anderson, Luke Hawranick, Garrett Williams
+ * @reviewers Koren Spell
  * @date 09/27/24
  */
 
@@ -15,7 +15,6 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
