@@ -2,7 +2,7 @@ package mainpackage;
 /**
  * @file LocalOptimization.java
  * @brief Main class for local optimization.
- * @authors 
+ * @authors Garrett Williams
  * @reviewers Mallory Anderson
  * @date 12/20/2024
  */
@@ -26,6 +26,8 @@ public class LocalOptimization {
         List<Integer> toRemove = new LinkedList<>();
         Instruction cur;
         Instruction nxt;
+
+        // Find LOD followed by STO or STO followed by LOD instructions
         for (int i = 0; i < instr.size() - 1; i++) {
             cur = instr.get(i);
             nxt = instr.get(i+1);
@@ -34,13 +36,17 @@ public class LocalOptimization {
                 && cur.getR() == nxt.getR()
                 && cur.getA() == nxt.getA()
                )
+               // Remove the second instruction
                toRemove.add(i+1);
         }
 
+        // Create a duplicate symbols file to modify
         Symbols outputSymbols = inputSymbols.Duplicate();
 
         // For each removed instruction...
-        for (int removed : toRemove)
+        for (int removed : toRemove) {
+            // Remove the instruction and...
+            instr.remove(removed);
             // Look at every label...
             for (Entry<String, Integer> e : outputSymbols.labelTable.entrySet()) {
                 // If it's address is after the removed instruction...
@@ -53,7 +59,9 @@ public class LocalOptimization {
                             i.setA(oldAddr - 1);
                 }
             }
+        }
 
+        // Return optimized code and symbols
         return new OptimizeResult(
             instr.stream().map((i) -> i.getValue()).collect(Collectors.toList()),
             outputSymbols);
