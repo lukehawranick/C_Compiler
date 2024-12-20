@@ -9,11 +9,13 @@ package mainpackage;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -163,11 +165,9 @@ public class Compiler {
                                     }
     
                                     // Output Instructions
-                                    try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputString))) {
-                                        for (Integer instruction : code) {
-                                            writer.write(instruction.toString());
-                                            writer.newLine();
-                                        }
+                                    try (DataOutputStream f = new DataOutputStream(new FileOutputStream(outputString))) {
+                                        for (Integer instruction : code)
+                                            f.writeInt(instruction);
                                     }
                                     catch (IOException e) {}
     
@@ -201,49 +201,6 @@ public class Compiler {
                             break;
                     }
                 }
-            }
-
-            // // Scan Source Code
-            // Scanner s = new Scanner(SourceStream.fromFile(sourceFile));
-            // // Parse Tokens
-            // List<Atom> atoms = new LinkedList<>();
-            // new Parser(s, atoms::add).parse();
-            // for (Atom a : atoms) System.out.println(a);
-            // // TODO: Global Optimization
-            // List<Atom> GoptRes = GlobalOptimization.optimize(atoms);
-            // for (Atom a: GoptRes) System.out.println(a); 
-            // // Generate Machine Code
-            // List<Integer> code = new ArrayList<>();
-            // CodeGen gen = new CodeGen(atoms, code::add);
-            // gen.generate();
-            // // Local Optimization
-            // LocalOptimization.OptimizeResult optRes = LocalOptimization.Optimize(code, gen.getSymbols());
-            // code = optRes.output;
-            // CodeGen.Symbols sym = optRes.outputSymbols;
-            // // Print labels
-            // System.out.println("----- LABELS -----");
-            // for (Entry<String, Integer> e : sym.labelTable.entrySet())
-            //     System.out.println(e.getValue() + "\t \t" + e.getKey());
-            // // Print constants and variables
-            // System.out.println("----- VARIABLES -----");
-            // for (int j = 0; j < gen.getCodeSegBeginning(); j++) {
-            //     System.out.printf("%d\t \t%s (%s)\n", pc, Float.intBitsToFloat(code.get(j)), sym.getSymbolOf(pc));
-            //     pc++;
-            // }
-            // // Print instructions
-            // System.out.println("----- INSTRUCTIONS -----");
-            // for (int j = gen.getCodeSegBeginning(); j < code.size(); j++) {
-            //     System.out.printf("%d\t %s\t%s\n", pc,
-            //         sym.labelTable.containsValue(pc) ? sym.getRawSymbolOf(pc) + ": " : "",
-            //         new Instruction(code.get(j)).toStringPrettyPlus(sym));
-            //     pc++;
-            // }
-
-            try (FileOutputStream fos = new FileOutputStream("output.bin")) {
-                // ByteBuffer buf = ByteBuffer.allocate(code.size() * 4);
-                // for (int c : code)
-                //     buf.putInt(c);
-                // fos.write(buf.array());
             }
         } catch (NullPointerException | IOException e) {
             e.printStackTrace();
