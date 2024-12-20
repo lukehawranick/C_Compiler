@@ -2,7 +2,7 @@ package mainpackage;
 /**
  * @file GlobalOptimization.java
  * @brief Main class for global optimization.
- * @authors Sara Ackerman, Jaremy Appiah
+ * @authors Sara Ackerman, Jeremy Appiah
  * @reviewers Mallory Anderson, Luke Hawranick, Koren Spell, Garrett Williams 
  * @date 12/20/2024
  */
