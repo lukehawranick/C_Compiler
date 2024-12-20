@@ -7,7 +7,6 @@ package mainpackage;
  * @date 12/04/2024
  */
 
-import java.util.LinkedList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
@@ -59,11 +58,10 @@ public class CodeGen {
     private Symbols generateTables() {
         Symbols symbols = new Symbols();
         //program counter
-        int pc = 0;
-
+        int pc = 1; //  (starts at 1 because we include the address of the beginning of our code segment here)
         // Points to the next memory address to be allocated to a variable or constant.
-        int memoryCounter = 0;
-        
+        int memoryCounter = 1; //  (starts at 1 because we include the address of the beginning of our code segment here)
+
         //iterate through generated atoms
         for (Atom atom : input) {
             for (Operand o : atom.operands) {
@@ -121,9 +119,6 @@ public class CodeGen {
         output(symbols.getBeginningOfMemory());
         codeSegmentBeginning = symbols.getMemConsumed();
 
-        //Setting counting variables
-        int programCounter = symbols.getMemConsumed();  //increments by 4
-
         //iterating through the atom list
         for (Atom atom : input) {
             switch (atom.opcode) {
@@ -136,38 +131,20 @@ public class CodeGen {
                         Instruction.create(Opcode.fromAtomOpcode(atom.opcode), 0, REG, symbols.opToAddr(atom.getOperand(1))), // ADD RHS
                         Instruction.create(Opcode.STO, 0, REG, symbols.opToAddr(atom.getOperand(2))) // STORE RESULT
                         );
-
-                    //increment program counter
-                    programCounter += 3;
                     break;
                 case JMP:
                     output(
                         Instruction.create(Opcode.CMP, Cmp.ALWAYS, 0, 0), // Set flag to true so that we can jump
                         Instruction.create(Opcode.JMP, 0, 0, symbols.opToAddr(atom.getOperand(4))) // jump to the label
                         );
-
-                    //increment program counter
-                    programCounter += 2;
                     break;
 
-                    // I think my (Koren) correction above works, but if it doesn't use this
-
-                    // String label = atom.getOperand(0);
-                    // Integer targetAddress = labelTable.get(label);
-                    // if (targetAddress == null) {
-                    // 	throw new IllegalArgumentException("Undefined label: " + label);
-            		// }
-                    // mainInstruction.append(String.format("%04d", targetAddress)); // Label address
-					
                 case TST:
                     output(
                         Instruction.create(Opcode.LOD, 0, REG, symbols.opToAddr(atom.getOperand(0))), // Load the lhs
                         Instruction.create(Opcode.CMP, atom.getOperand(3).getCmp(), REG, symbols.opToAddr(atom.getOperand(1))), // lhs cmp rhs
                         Instruction.create(Opcode.JMP, 0, 0, symbols.opToAddr(atom.getOperand(4))) // jump if flag is true
                         );
-
-                    //increment program counter
-                    programCounter += 3;
                     break;
 
                 case NEG:
@@ -177,8 +154,6 @@ public class CodeGen {
                         Instruction.create(Opcode.SUB, 0, REG, symbols.opToAddr(atom.getOperand(0))), // Handling the main Sub instruction //gets number to be negative version of itself
                         Instruction.create(Opcode.STO, 0, REG, symbols.opToAddr(atom.getOperand(2))) // Store result
                         );
-
-                    programCounter += 4;
 		            break;
 
                 case LBL: //handled in generateLabelTable()
@@ -190,8 +165,6 @@ public class CodeGen {
                         Instruction.create(Opcode.LOD, 0, REG, symbols.opToAddr(atom.getOperand(0))), // Handling the initial Load Instruction
                         Instruction.create(Opcode.STO, 0, REG, symbols.opToAddr(atom.getOperand(2))) // Handling the Store instruction
                         );
-
-                    programCounter += 2;
 		            break;
 
                 default:
@@ -217,21 +190,6 @@ public class CodeGen {
         if (symbols == null)
             throw new IllegalStateException("Cannot get the symbols before generating code.");
         return symbols;
-    }
-
-    /**
-     * @brief Diverts Output to List to be Handled Later
-     */
-    private void startCapturingOutput() {
-        capturedOutput.push(new LinkedList<>());
-    }
-
-    /**
-     * @brief Returns Captured Output and Sends Future Output to "Output" Again
-     * @return List of Binary Instructions Captured
-     */
-    private List<Integer> stopCapturingOutput() {
-        return capturedOutput.pop();
     }
 
     /**
@@ -271,7 +229,7 @@ public class CodeGen {
          * @return size of memory consumed by constant and variable tables.
          */
         public int getMemConsumed() {
-            return constantTable.size() + variableTable.size();
+            return constantTable.size() + variableTable.size() + 1; // + 1 for jump instruction to jump over data segment
         }
 
         /**
@@ -298,8 +256,9 @@ public class CodeGen {
          */
         public int[] getBeginningOfMemory() {
             int[] toReturn = new int[getMemConsumed()];
+            toReturn[0] = getMemConsumed(); // VM reads this value and jumps here. This basically tells the VM where our data segment ends and our code segment starts
             for (HashMap.Entry<Float, Integer> e : constantTable.entrySet())
-                toReturn[e.getValue() / 4] = Float.floatToIntBits(e.getKey());
+                toReturn[e.getValue()] = Float.floatToIntBits(e.getKey());
             // we dont have to initialize the variables because that will be
             // handled in runtime
             return toReturn;
